@@ -2,6 +2,7 @@ import { el, errorLine, lifetime } from './dom.js';
 import { passageSummary } from './labels.js';
 import { listenableSentences, respondablePassages } from './exercise-picks.js';
 import { t } from './i18n.js';
+import { mountLanguageRows, pairLine } from './language-pair.js';
 
 function missingSetup(state) {
   const missing = [];
@@ -18,6 +19,33 @@ function renderNotices(app, parent, signal) {
   for (const line of missing) box.append(el('p', '', line));
   app.ui.button(box, t('打开设置'), () => app.ctx.app.openSettings(), signal);
   parent.append(box);
+}
+
+/**
+ * Asks once which two languages to practise with: confirm the pair, or change it here.
+ * Either answer is remembered, and the card does not come back. `redraw` draws the home screen again.
+ */
+function renderLanguages(app, parent, signal, error, redraw) {
+  parent.replaceChildren();
+  if (app.state.settings.languagesConfirmed) return;
+  const box = el('div', 'se-notice');
+  const actions = el('div', 'se-actions');
+  box.append(el('p', 'se-label', t('练习语言')), el('p', '', pairLine(app.state.settings)), el('p', 'se-muted', t('新段落会从母语翻译成学习语言。以后可以在插件设置里改。')), actions);
+  parent.append(box);
+  /** Remembers that the learner has answered. Resolves to whether that worked. */
+  const remember = async () => {
+    try { app.setState(await app.call('save-settings', { languagesConfirmed: true })); return true; }
+    catch (cause) { if (!signal.aborted) error.show(cause); return false; }
+  };
+  app.ui.button(actions, t('确认'), async () => { if (await remember() && !signal.aborted) redraw(); }, signal, { variant: 'default' });
+  app.ui.button(actions, t('修改'), async () => {
+    if (!(await remember()) || signal.aborted) return;
+    box.replaceChildren(el('p', 'se-label', t('练习语言')));
+    mountLanguageRows(app, box, signal, error);
+    const done = el('div', 'se-actions');
+    box.append(done);
+    app.ui.button(done, t('完成'), redraw, signal, { variant: 'default' });
+  }, signal);
 }
 
 /** The way into today's review. Hidden until at least one sentence has entered spaced review. */
@@ -55,7 +83,7 @@ function renderExercises(app, parent, signal) {
 function passageRow(app, passage) {
   const row = el('button', 'se-passage-row');
   row.type = 'button';
-  row.append(el('span', 'se-passage-preview', passage.sentences[0]?.zh ?? ''), el('span', 'se-muted', passageSummary(passage)));
+  row.append(el('span', 'se-passage-preview', passage.sentences[0]?.native ?? ''), el('span', 'se-muted', passageSummary(passage)));
   row.addEventListener('click', () => app.go({ name: 'passage', passageId: passage.id }));
   return row;
 }
@@ -69,17 +97,18 @@ function renderPassages(app, parent) {
   for (const passage of app.state.passages) parent.append(passageRow(app, passage));
 }
 
-/** The first screen: what is still missing in settings, today's review, the optional exercises, and the passages entered so far. */
+/** The first screen: the languages to confirm on first use, what is still missing in settings, today's review, the optional exercises, and the passages entered so far. */
 export function homeScreen(app, root, signal) {
   // The host already shows the view's name above this screen.
   const header = el('div', 'se-header');
   header.append(el('h2', 'se-title', t('我的段落')));
   app.ui.button(header, t('新段落'), () => app.go({ name: 'intake' }), signal, { variant: 'default' });
+  const languages = el('div');
   const notices = el('div');
   const review = el('div');
   const exercises = el('div');
   const passages = el('div', 'se-passages');
-  root.append(notices, review, exercises, header);
+  root.append(languages, notices, review, exercises, header);
   const error = errorLine(root);
   root.append(passages);
 
@@ -88,6 +117,7 @@ export function homeScreen(app, root, signal) {
   const render = () => {
     buttons.abort();
     buttons = lifetime(signal);
+    renderLanguages(app, languages, buttons.signal, error, render);
     renderNotices(app, notices, buttons.signal);
     renderReview(app, review, buttons.signal);
     renderExercises(app, exercises, buttons.signal);

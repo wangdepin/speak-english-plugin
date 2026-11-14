@@ -3,13 +3,17 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { assessPronunciation } = require('../src/backend/speech/assess.cjs');
+const { buildAssessmentRequest, assessmentOptions } = require('../src/backend/speech/azure-request.cjs');
 const { SpeechError } = require('../src/backend/speech/errors.cjs');
 const { fixtureBytes, fixtureJson, fakeFetch, replay, makeWav } = require('./helpers.cjs');
 
 const KEY = 'test-key-0123456789abcdef';
 const wav = fixtureBytes('audio', 'tell-him-16k.wav');
 const recorded = name => fixtureJson('azure', `${name}.json`);
-const assess = (overrides = {}) => assessPronunciation({ wav, referenceText: "I'll tell him about it.", key: KEY, region: 'swedencentral', ...overrides });
+const assess = (overrides = {}) => assessPronunciation({ wav, referenceText: "I'll tell him about it.", locale: 'en-US', key: KEY, region: 'swedencentral', ...overrides });
+const assessmentHeader = call => JSON.parse(Buffer.from(call.init.headers['Pronunciation-Assessment'], 'base64').toString('utf8'));
+const BASE_OPTIONS = { GradingSystem: 'HundredMark', Granularity: 'Phoneme', Dimension: 'Comprehensive', EnableMiscue: true };
+const FULL_OPTIONS = { ...BASE_OPTIONS, EnableProsodyAssessment: true, PhonemeAlphabet: 'IPA', NBestPhonemeCount: 3 };
 
 async function rejection(promise) {
   const error = await promise.then(() => null, caught => caught);
@@ -31,17 +35,43 @@ test('sends the recording to the regional endpoint with the assessment options',
   assert.equal(init.headers['Content-Type'], 'audio/wav; codecs=audio/pcm; samplerate=16000');
   assert.equal(init.body, wav);
   assert.ok(init.signal instanceof AbortSignal);
-  assert.deepEqual(JSON.parse(Buffer.from(init.headers['Pronunciation-Assessment'], 'base64').toString('utf8')), {
-    ReferenceText: "I'll tell him about it.", GradingSystem: 'HundredMark', Granularity: 'Phoneme', Dimension: 'Comprehensive',
-    EnableMiscue: true, EnableProsodyAssessment: true, PhonemeAlphabet: 'IPA', NBestPhonemeCount: 3,
-  });
+  assert.deepEqual(assessmentHeader(calls[0]), { ReferenceText: "I'll tell him about it.", ...FULL_OPTIONS });
 });
 
 test('a reference sentence with non-ASCII characters survives the header encoding', async () => {
   const { fetchImpl, calls } = replay(recorded('match'));
   await assess({ fetchImpl, referenceText: 'It’s a café — naïve.' });
-  const header = JSON.parse(Buffer.from(calls[0].init.headers['Pronunciation-Assessment'], 'base64').toString('utf8'));
-  assert.equal(header.ReferenceText, 'It’s a café — naïve.');
+  assert.equal(assessmentHeader(calls[0]).ReferenceText, 'It’s a café — naïve.');
+});
+
+test('only en-US asks for prosody, IPA phoneme names and "sounds like" candidates', () => {
+  assert.deepEqual(assessmentOptions('en-US'), FULL_OPTIONS);
+  for (const locale of ['ja-JP', 'zh-CN', 'de-DE', 'en-GB']) assert.deepEqual(assessmentOptions(locale), BASE_OPTIONS, locale);
+});
+
+test('the request names the locale of the recording and carries the options of that locale', () => {
+  const referenceText = '今日は天気がいいので、公園を散歩しましょう。';
+  const { url, init } = buildAssessmentRequest({ key: KEY, region: 'swedencentral', locale: 'ja-JP', referenceText, wav });
+  assert.equal(url, 'https://swedencentral.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=ja-JP&format=detailed');
+  const header = assessmentHeader({ init });
+  assert.deepEqual(header, { ReferenceText: referenceText, ...BASE_OPTIONS });
+  for (const option of ['EnableProsodyAssessment', 'PhonemeAlphabet', 'NBestPhonemeCount']) assert.ok(!Object.hasOwn(header, option), option);
+});
+
+test('recordings in other languages are scored in their own locale', async () => {
+  const cases = [
+    ['mandarin', 'zh-CN', 98, 9],
+    ['japanese', 'ja-JP', 87.4, 10],
+    ['german', 'de-DE', 92, 10],
+  ];
+  for (const [name, locale, overall, words] of cases) {
+    const exchange = recorded(name);
+    const { fetchImpl, calls } = replay(exchange);
+    const assessment = await assess({ fetchImpl, locale, referenceText: exchange.referenceText });
+    assert.deepEqual([assessment.scores.overall, assessment.scores.prosody, assessment.words.length], [overall, null, words], name);
+    assert.match(calls[0].url, new RegExp(`\\?language=${locale}&format=detailed$`), name);
+    assert.deepEqual(assessmentHeader(calls[0]), { ReferenceText: exchange.referenceText, ...BASE_OPTIONS }, name);
+  }
 });
 
 test('recorded failures map to stable codes', async () => {
@@ -85,6 +115,12 @@ test('unusable input is refused before any request is made', async () => {
     ['key with a line break', { key: 'abc\r\nX-Injected: 1' }, 'invalid-key'],
     ['region with a host in it', { region: 'evil.example.com/x' }, 'invalid-input'],
     ['region missing', { region: undefined }, 'invalid-input'],
+    ['locale missing', { locale: undefined }, 'invalid-input'],
+    ['language without a region', { locale: 'ja' }, 'invalid-input'],
+    ['locale in the wrong case', { locale: 'JA-jp' }, 'invalid-input'],
+    ['locale with a query in it', { locale: 'ja-JP&format=simple' }, 'invalid-input'],
+    ['locale that is a name', { locale: 'Japanese' }, 'invalid-input'],
+    ['locale not a string', { locale: 5 }, 'invalid-input'],
   ];
   for (const [name, overrides, code] of cases) {
     const { fetchImpl, calls } = replay(recorded('match'));

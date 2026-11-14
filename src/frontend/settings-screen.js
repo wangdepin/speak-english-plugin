@@ -2,7 +2,9 @@ import { el, errorLine, errorText, lifetime } from './dom.js';
 import { recordWavFor } from './recorder.js';
 import { toBase64 } from './wav.js';
 import { scoreLine } from './word-marking.js';
-import { LANGUAGES, mark, setLanguage, t } from './i18n.js';
+import { LANGUAGES as INTERFACE_LANGUAGES, mark, setLanguage, t } from './i18n.js';
+import { LANGUAGES } from './languages.js';
+import { languageRows } from './language-pair.js';
 
 const TTS_MODELS = ['eleven_v4', 'eleven_v4_turbo', 'eleven_v3', 'eleven_multilingual_v2', 'eleven_flash_v2_5'];
 const VOICE_HINT = mark('ElevenLabs 的声音 ID。Jessica：cgSgspJ2msm6clMCkdW9；Eric：cjVigY5qzO86Huf0OWal');
@@ -38,22 +40,25 @@ function secretRow(env, parent, name, label) {
 }
 
 function settingsRows(env, settings) {
-  const row = (key, label, value, type, extras = {}, parse = input => input) => ({
-    key, label, value, type, ...extras,
-    onChange: async input => {
-      try { env.apply(await env.ctx.call('save-settings', { [key]: parse(input) })); env.error.clear(); }
-      catch (cause) { env.error.show(cause); throw cause; }
-    },
-  });
+  const save = async patch => {
+    try { env.apply(await env.ctx.call('save-settings', patch)); env.error.clear(); }
+    catch (cause) { env.error.show(cause); throw cause; }
+  };
+  const row = (key, label, value, type, extras = {}, parse = input => input) => ({ key, label, value, type, ...extras, onChange: input => save({ [key]: parse(input) }) });
+  const readsByChar = LANGUAGES[settings.nativeLanguage].readBy === 'char';
   return [
-    row('language', '界面语言 / Language', settings.language, 'dropdown', { description: t('切换后，侧边栏入口和页面标题要重启应用才更新。'), options: LANGUAGES.map(value => ({ value, label: LANGUAGE_NAMES[value] })) }),
+    row('language', '界面语言 / Language', settings.language, 'dropdown', { description: t('切换后，侧边栏入口和页面标题要重启应用才更新。'), options: INTERFACE_LANGUAGES.map(value => ({ value, label: LANGUAGE_NAMES[value] })) }),
+    ...languageRows(settings, save),
     row('azureRegion', t('Azure 区域'), settings.azureRegion, 'text', { description: t('创建 Azure 语音资源时选的区域，例如 swedencentral') }, input => input.trim()),
     row('ttsModel', t('语音模型'), settings.ttsModel, 'dropdown', { options: TTS_MODELS.map(value => ({ value, label: value })) }),
     row('ttsVoiceId', t('声音'), settings.ttsVoiceId, 'text', { description: t(VOICE_HINT) }, input => input.trim()),
     row('questionVoiceId', t('问句的声音'), settings.questionVoiceId, 'text', { description: t('「接话」练习里提问的声音，最好和上面的不同') }, input => input.trim()),
     row('dailyReviewLimit', t('每日复习上限（次）'), settings.dailyReviewLimit, 'number', { min: 1, max: 500, step: 1 }, Number),
     row('retention', t('目标保持率（%）'), Math.round(settings.retention * 100), 'number', { min: 70, max: 99, step: 1 }, input => Number(input) / 100),
-    row('readingCharsPerSecond', t('读题速度（每秒几个字）'), settings.readingCharsPerSecond, 'number', { min: 1, max: 20, step: 1, description: t('开始时限 = 中文字数 ÷ 读题速度 + 思考时间') }, Number),
+    row('readingSpeed', readsByChar ? t('读题速度（每秒几个字）') : t('读题速度（每秒几个词）'), settings.readingSpeed, 'number', {
+      min: 1, max: 20, step: 1,
+      description: readsByChar ? t('开始时限 = 母语的字数 ÷ 读题速度 + 思考时间。换母语时恢复默认值。') : t('开始时限 = 母语的词数 ÷ 读题速度 + 思考时间。换母语时恢复默认值。'),
+    }, Number),
     row('startAllowanceSeconds', t('思考时间（秒）'), settings.startAllowanceSeconds, 'number', { min: 0, max: 30, step: 1 }, Number),
     row('speakingTimeFactor', t('说话时限（原声时长的几倍）'), settings.speakingTimeFactor, 'number', { min: 1, max: 5, step: 0.5 }, Number),
     row('explainAfterFailures', t('几次没说出来后提示讲解'), settings.explainAfterFailures, 'number', { min: 1, max: 20, step: 1 }, Number),

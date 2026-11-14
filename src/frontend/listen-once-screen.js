@@ -1,5 +1,5 @@
 import { el, errorLine, lifetime } from './dom.js';
-import { appendEnglish } from './labels.js';
+import { appendWithKey } from './labels.js';
 import { listenableSentences, sample } from './exercise-picks.js';
 import { createSentencePlayer, playOrStop, SLOW_RATE } from './sentence-player.js';
 import { mark, t } from './i18n.js';
@@ -56,10 +56,10 @@ export function listenOnceScreen(app, root, signal) {
 
   /** The text of the sentence, once the single hearing is over. Returns the row for this step's buttons. */
   function reveal(item, ...notes) {
-    const english = el('p', 'se-english se-english-large');
-    appendEnglish(english, item.sentence.en, item.sentence.keyExpression);
+    const spoken = el('p', 'se-target se-target-large');
+    appendWithKey(spoken, item.sentence.target, item.sentence.keyExpression);
     const actions = el('div', 'se-actions');
-    body.replaceChildren(english, el('p', 'se-chinese', item.sentence.zh), ...notes, actions);
+    body.replaceChildren(spoken, el('p', 'se-native', item.sentence.native), ...notes, actions);
     return actions;
   }
 

@@ -1,7 +1,8 @@
 import { el, errorLine, lifetime } from './dom.js';
-import { appendEnglish, passageSummary } from './labels.js';
+import { appendWithKey, passageSummary } from './labels.js';
 import { createSentencePlayer, playSentences, slowToggle } from './sentence-player.js';
 import { mountQuestions } from './question-section.js';
+import { mountLessonButtons } from './lesson-start.js';
 import { mark, t } from './i18n.js';
 
 const RECALL_NOTES = { scheduled: mark('已进入复习'), tomorrow: mark('明天再试背'), pending: '' };
@@ -16,6 +17,8 @@ function recallNote(sentence) {
 /**
  * One passage. This screen is the "listen" step (whole passage or one sentence,
  * optionally slowed down) and the way into shadowing, whole reading and recall.
+ * Above those is the optional first step: a listening diagnostic, a lesson with
+ * the app's teacher, then reading aloud and speed listening.
  * Below the sentences are the passage's questions for the "respond" exercise.
  * Missing reference audio is synthesized one sentence at a time.
  */
@@ -32,17 +35,20 @@ export function passageScreen(app, root, signal, { passageId }) {
   app.ui.button(header, t('← 返回'), () => app.go({ name: 'home' }), signal, { variant: 'ghost' });
   const summary = el('span', 'se-muted');
   header.append(summary);
+  const study = el('div', 'se-actions se-study');
   const steps = el('div', 'se-actions se-steps');
   const listen = el('div', 'se-actions');
   const status = el('p', 'se-muted se-status');
   const list = el('div', 'se-sentence-list');
-  root.append(header, steps, listen, status);
+  root.append(header, study, steps, listen, status);
   const error = errorLine(root);
   const retrySlot = el('div', 'se-actions');
   root.append(retrySlot, list);
   mountQuestions(app, root, signal, passageId, error);
   const footer = el('div', 'se-actions se-footer');
   root.append(footer);
+  // Mounted once, not with the rows: a lesson that is starting outlives the redraws during synthesis.
+  const lesson = mountLessonButtons(app, study, signal, passageId, error);
 
   const guarded = action => async () => {
     error.clear();
@@ -73,9 +79,9 @@ export function passageScreen(app, root, signal, { passageId }) {
     row.dataset.sentenceId = sentence.id;
     row.classList.toggle('se-current', sentence.id === playingId);
     const text = el('div', 'se-sentence-text');
-    const english = el('p', 'se-english');
-    appendEnglish(english, sentence.en, sentence.keyExpression);
-    text.append(el('p', 'se-chinese', sentence.zh), english);
+    const spoken = el('p', 'se-target');
+    appendWithKey(spoken, sentence.target, sentence.keyExpression);
+    text.append(el('p', 'se-native', sentence.native), spoken);
     if (recallNote(sentence)) text.append(el('p', 'se-muted', recallNote(sentence)));
     const controls = el('div', 'se-sentence-controls');
     if (sentence.audio) {
@@ -87,6 +93,15 @@ export function passageScreen(app, root, signal, { passageId }) {
     }
     row.append(el('span', 'se-sentence-number', String(index + 1)), text, controls);
     return row;
+  }
+
+  function renderStudy(passage) {
+    study.replaceChildren(el('span', 'se-muted', t('先学一遍（可选）')));
+    const go = name => () => app.go({ name, passageId });
+    app.ui.button(study, passage.diagnosis ? t('摸底结果') : t('摸底'), go(passage.diagnosis ? 'gaps' : 'diagnose'), rows.signal);
+    study.append(lesson.element);
+    lesson.refresh();
+    app.ui.button(study, passage.consolidation ? t('朗读和变速听（已做）') : t('朗读和变速听'), go('consolidate'), rows.signal);
   }
 
   function renderSteps(passage) {
@@ -103,6 +118,7 @@ export function passageScreen(app, root, signal, { passageId }) {
     rows = lifetime(signal);
     const passage = findPassage();
     summary.textContent = passageSummary(passage);
+    renderStudy(passage);
     renderSteps(passage);
     list.replaceChildren(...passage.sentences.map(sentenceRow));
     retrySlot.replaceChildren();

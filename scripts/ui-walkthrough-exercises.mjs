@@ -33,10 +33,10 @@ async function prepare() {
   await call("save-settings", { azureRegion: env.SPEECH_REGION });
   for (const passage of (await call("get-state")).passages) await call("delete-passage", { passageId: passage.id });
   const sentences = [
-    { zh: "这事挺难，但我做成了。", en: "I can't believe I pulled it off.", keyExpression: "pulled it off" },
-    { zh: "我明天会把这件事告诉他。", en: "I'll tell him about it tomorrow.", keyExpression: "tell him about it" },
+    { native: "这事挺难，但我做成了。", target: "I can't believe I pulled it off.", keyExpression: "pulled it off" },
+    { native: "我明天会把这件事告诉他。", target: "I'll tell him about it tomorrow.", keyExpression: "tell him about it" },
   ];
-  const { state } = await call("create-passage", { register: "casual", version: "brief", chinese: sentences.map(sentence => sentence.zh).join(""), sentences });
+  const { state } = await call("create-passage", { register: "casual", version: "brief", nativeLanguage: "zh-CN", targetLanguage: "en-US", source: sentences.map(sentence => sentence.native).join(""), sentences });
   for (const sentence of state.passages[0].sentences) {
     await call("synthesize-sentence", { sentenceId: sentence.id });
     // Said from memory, so the whole passage counts as memorized and can be asked about.

@@ -1,5 +1,5 @@
 import { el, errorLine, lifetime } from './dom.js';
-import { appendEnglish, passageDate } from './labels.js';
+import { appendWithKey, passageDate } from './labels.js';
 import { createPlayer, createSentencePlayer, playSentences, slowToggle } from './sentence-player.js';
 import { createTakeRecorder } from './take-recorder.js';
 import { toBase64 } from './wav.js';
@@ -29,8 +29,8 @@ export function readingScreen(app, root, signal, { passageId }) {
   const text = el('div', 'se-card se-reading-text');
   const lines = new Map();
   for (const sentence of findPassage().sentences) {
-    const line = el('p', 'se-english');
-    appendEnglish(line, sentence.en, sentence.keyExpression);
+    const line = el('p', 'se-target');
+    appendWithKey(line, sentence.target, sentence.keyExpression);
     lines.set(sentence.id, line);
     text.append(line);
   }

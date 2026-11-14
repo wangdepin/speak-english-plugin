@@ -33,6 +33,13 @@ function requireModelId(modelId) {
   return modelId;
 }
 
+/** The language to pronounce the text in, as the service names it: "ja", "yue". Left out when not given. */
+function requireLanguageCode(languageCode) {
+  if (languageCode === undefined || languageCode === null) return null;
+  if (typeof languageCode !== 'string' || !/^[a-z]{2,3}$/.test(languageCode)) throw invalidInput('the language code must be two or three letters');
+  return languageCode;
+}
+
 /** ElevenLabs errors arrive as { detail: { status, message } } or { detail: "text" }. */
 async function readErrorDetail(response) {
   try {
@@ -67,15 +74,17 @@ async function readAudio(response) {
 }
 
 /**
- * Speaks `text` with one ElevenLabs voice and model.
+ * Speaks `text` with one ElevenLabs voice and model. `languageCode` ("ja", "yue")
+ * tells the model which language the text is in; all five offered models take it.
  * Resolves to { bytes, mime, seconds } (MP3); rejects with a SpeechError.
  */
-async function synthesizeSpeech({ text, voiceId, modelId, key, fetchImpl, signal, timeoutMs }) {
+async function synthesizeSpeech({ text, voiceId, modelId, languageCode, key, fetchImpl, signal, timeoutMs }) {
+  const language = requireLanguageCode(languageCode);
   const url = `${ENDPOINT}/${requireVoiceId(voiceId)}?output_format=${OUTPUT_FORMAT}`;
   const init = {
     method: 'POST',
     headers: { 'xi-api-key': requireKey(SERVICE, key), 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-    body: JSON.stringify({ text: requireText(text), model_id: requireModelId(modelId) }),
+    body: JSON.stringify(Object.assign({ text: requireText(text), model_id: requireModelId(modelId) }, language ? { language_code: language } : {})),
   };
   return callService(SERVICE, url, init, readAudio, { fetchImpl, signal, timeoutMs });
 }

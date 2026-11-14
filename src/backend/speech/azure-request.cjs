@@ -5,17 +5,19 @@ const { requireKey } = require('./http.cjs');
 
 const SERVICE = 'azure';
 const REFERENCE_MAX_CHARS = 1000;
-// Prosody scores and "sounds like" candidates exist for en-US only.
-const LANGUAGE = 'en-US';
-const ASSESSMENT_OPTIONS = Object.freeze({
-  GradingSystem: 'HundredMark',
-  Granularity: 'Phoneme',
-  Dimension: 'Comprehensive',
-  EnableMiscue: true,
-  EnableProsodyAssessment: true,
-  PhonemeAlphabet: 'IPA',
-  NBestPhonemeCount: 3,
-});
+const BASE_OPTIONS = Object.freeze({ GradingSystem: 'HundredMark', Granularity: 'Phoneme', Dimension: 'Comprehensive', EnableMiscue: true });
+// Prosody scores, phoneme names in IPA and "sounds like" candidates exist for en-US only.
+const FULL_LOCALE = 'en-US';
+const FULL_OPTIONS = Object.freeze({ GradingSystem: 'HundredMark', Granularity: 'Phoneme', Dimension: 'Comprehensive', EnableMiscue: true, EnableProsodyAssessment: true, PhonemeAlphabet: 'IPA', NBestPhonemeCount: 3 });
+
+/** What to ask the service to assess for one locale. */
+const assessmentOptions = locale => (locale === FULL_LOCALE ? FULL_OPTIONS : BASE_OPTIONS);
+
+/** The locale becomes part of the URL, so only a plain code such as "ja-JP" is accepted. */
+function requireLocale(locale) {
+  if (typeof locale !== 'string' || !/^[a-z]{2}-[A-Z]{2}$/.test(locale)) throw new SpeechError(SERVICE, 'invalid-input', 'the language must be a locale code such as "en-US"');
+  return locale;
+}
 
 /** The region becomes part of the host name, so only a plain Azure region name is accepted. */
 function requireRegion(region) {
@@ -32,24 +34,24 @@ function requireReferenceText(referenceText) {
   return text;
 }
 
-function assessmentHeader(referenceText) {
-  return Buffer.from(JSON.stringify({ ReferenceText: referenceText, ...ASSESSMENT_OPTIONS }), 'utf8').toString('base64');
+function assessmentHeader(referenceText, locale) {
+  return Buffer.from(JSON.stringify(Object.assign({ ReferenceText: referenceText }, assessmentOptions(locale))), 'utf8').toString('base64');
 }
 
-/** Builds the pronunciation-assessment REST request for one 16 kHz mono PCM WAV recording. */
-function buildAssessmentRequest({ key, region, referenceText, wav }) {
-  const url = `https://${requireRegion(region)}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${LANGUAGE}&format=detailed`;
+/** Builds the pronunciation-assessment REST request for one 16 kHz mono PCM WAV recording of speech in `locale`. */
+function buildAssessmentRequest({ key, region, locale, referenceText, wav }) {
+  const url = `https://${requireRegion(region)}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${requireLocale(locale)}&format=detailed`;
   const init = {
     method: 'POST',
     headers: {
       'Ocp-Apim-Subscription-Key': requireKey(SERVICE, key),
       'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000',
       Accept: 'application/json',
-      'Pronunciation-Assessment': assessmentHeader(requireReferenceText(referenceText)),
+      'Pronunciation-Assessment': assessmentHeader(requireReferenceText(referenceText), locale),
     },
     body: wav,
   };
   return { url, init };
 }
 
-module.exports = { buildAssessmentRequest, ASSESSMENT_OPTIONS, REFERENCE_MAX_CHARS };
+module.exports = { buildAssessmentRequest, assessmentOptions, REFERENCE_MAX_CHARS };

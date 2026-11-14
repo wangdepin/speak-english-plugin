@@ -16,6 +16,10 @@
 .se-root .se-notice { border: 1px solid var(--border, #8885); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
 .se-root .se-notice p { margin: 0 0 6px; }
 
+.se-root .se-language-pair { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 12px; }
+.se-root .se-language-pair .se-label { margin: 0; }
+.se-root .se-language-rows { flex: 1 0 100%; }
+
 .se-root .se-passages { display: flex; flex-direction: column; gap: 8px; }
 .se-root .se-passage-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 10px 14px; border: 1px solid var(--border, #8885); border-radius: 10px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .se-root .se-passage-row:hover, .se-root .se-passage-row:focus-visible { border-color: var(--ring, #888); outline: none; }
@@ -27,7 +31,7 @@
 .se-root .se-input:focus-visible { outline: 2px solid var(--ring, #888); outline-offset: 1px; }
 .se-root textarea.se-input { resize: vertical; }
 .se-root .se-passage-input { min-height: 180px; }
-.se-root .se-english-input { min-height: 56px; }
+.se-root .se-target-input { min-height: 56px; }
 .se-root .se-radios { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 4px 0 12px; }
 .se-root .se-radio { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .se-root .se-radio input { accent-color: var(--primary, #888); }
@@ -37,8 +41,8 @@
 .se-root .se-sentence-number { flex: none; width: 1.5em; color: var(--muted-foreground, #888); font-variant-numeric: tabular-nums; }
 .se-root .se-sentence-text, .se-root .se-sentence-fields { flex: 1; min-width: 0; }
 .se-root .se-sentence-fields .se-field:last-child { margin-bottom: 0; }
-.se-root .se-chinese { margin: 0 0 4px; color: var(--muted-foreground, #888); }
-.se-root .se-english { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.se-root .se-native { margin: 0 0 4px; color: var(--muted-foreground, #888); }
+.se-root .se-target { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
 .se-root .se-sentence-controls { display: flex; flex: none; align-items: center; gap: 8px; }
 
 .se-settings .se-secret { margin: 0 0 14px; }
@@ -53,14 +57,17 @@
 .se-settings .se-mic-result:empty { display: none; }
 
 .se-root .se-steps { margin: 0 0 4px; }
+.se-root .se-study { margin: 0 0 8px; }
+.se-root .se-lesson { display: contents; }
+.se-root .se-card + .se-card { margin-top: 12px; }
 .se-root .se-current { border-color: var(--ring, #888); }
 .se-root p.se-current { text-decoration: underline; text-underline-offset: 4px; }
 .se-root .se-card { border: 1px solid var(--border, #8885); border-radius: 12px; padding: 20px 22px; }
 .se-root .se-card .se-actions:last-child { margin-bottom: 0; }
-.se-root .se-english-large { font-size: 18px; line-height: 1.5; }
+.se-root .se-target-large { font-size: 18px; line-height: 1.5; }
 .se-root .se-cue { font-size: 20px; line-height: 1.5; margin: 12px 0 16px; }
 .se-root .se-status { margin: 8px 0; }
-.se-root .se-reading-text .se-english { margin: 0 0 8px; }
+.se-root .se-reading-text .se-target { margin: 0 0 8px; }
 .se-root .se-result:empty { display: none; }
 .se-root .se-result { margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed var(--border, #8885); }
 .se-root .se-marked { margin: 0 0 6px; font-size: 18px; line-height: 1.6; }
@@ -68,6 +75,9 @@
 .se-root .se-word-wrong { color: #dc2626; font-weight: 600; }
 .se-root .se-word-extra { color: #dc2626; font-style: italic; }
 .se-root .se-word-missed { color: var(--muted-foreground, #888); text-decoration: line-through; }
+.se-root .se-tap { cursor: pointer; border-radius: 4px; padding: 0 2px; }
+.se-root .se-tap:hover { background: #8883; }
+.se-root .se-word-unknown { background: #f59e0b40; box-shadow: inset 0 -2px 0 #f59e0b; }
 .se-root .se-hints { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
 .se-root .se-card > .se-hints { list-style: disc; margin: 10px 0; }
 .se-root .se-card > .se-hints li { margin: 4px 0; }
@@ -76,7 +86,7 @@
 .se-root .se-review .se-label { margin-bottom: 6px; }
 .se-root .se-card .se-subtitle { margin-top: 0; }
 .se-root .se-option { border: 1px solid var(--border, #8885); border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
-.se-root .se-option .se-english { margin-bottom: 6px; }
+.se-root .se-option .se-target { margin-bottom: 6px; }
 .se-root .se-option .se-button { margin-top: 8px; }
 .se-root .se-questions { margin-top: 28px; }
 .se-root .se-question-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }

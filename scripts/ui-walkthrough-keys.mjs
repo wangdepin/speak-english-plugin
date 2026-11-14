@@ -39,8 +39,8 @@ async function makeDue(sentenceId) {
 }
 
 const SENTENCES = [
-  { zh: "我会把这件事告诉他。", en: "I'll tell him about it.", keyExpression: "tell him about it" },
-  { zh: "就这样。", en: "That's it.", keyExpression: "" },
+  { native: "我会把这件事告诉他。", target: "I'll tell him about it.", keyExpression: "tell him about it" },
+  { native: "就这样。", target: "That's it.", keyExpression: "" },
 ];
 
 async function prepare() {
@@ -50,7 +50,7 @@ async function prepare() {
   await call("set-secret", { name: "elevenLabsKey", value: JSON.parse(fs.readFileSync(authFile, "utf8")).ELEVENLABS_API_KEY });
   await call("save-settings", { azureRegion: env.SPEECH_REGION, language: "zh" });
   for (const passage of (await call("get-state")).passages) await call("delete-passage", { passageId: passage.id });
-  const { state } = await call("create-passage", { register: "formal", version: "sentences", chinese: SENTENCES.map(sentence => sentence.zh).join(""), sentences: SENTENCES });
+  const { state } = await call("create-passage", { register: "formal", version: "sentences", nativeLanguage: "zh-CN", targetLanguage: "en-US", source: SENTENCES.map(sentence => sentence.native).join(""), sentences: SENTENCES });
   const ids = state.passages[0].sentences.map(sentence => sentence.id);
   for (const sentenceId of ids) await call("synthesize-sentence", { sentenceId });
   // The first sentence enters review and is made due; the second is left for the recall screen.

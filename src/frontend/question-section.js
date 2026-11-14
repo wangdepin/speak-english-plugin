@@ -2,17 +2,19 @@ import { el, lifetime } from './dom.js';
 import { isMemorized } from './exercise-picks.js';
 import { createPlayer } from './sentence-player.js';
 import { t } from './i18n.js';
+import { languageName } from './languages.js';
 
-function draftRow(draft) {
+/** One suggested question as two editable fields: the question in the passage's target language, and its translation. */
+function draftRow(draft, passage) {
   const row = el('div', 'se-question-draft');
-  const english = el('input', 'se-input');
-  english.value = draft.en;
-  english.setAttribute('aria-label', t('问句（英文）'));
-  const chinese = el('input', 'se-input');
-  chinese.value = draft.zh;
-  chinese.setAttribute('aria-label', t('问句的中文'));
-  row.append(english, chinese);
-  return { row, read: () => ({ en: english.value, zh: chinese.value }) };
+  const question = el('input', 'se-input');
+  question.value = draft.target;
+  question.setAttribute('aria-label', t('问句（{language}）', { language: languageName(passage.targetLanguage) }));
+  const translation = el('input', 'se-input');
+  translation.value = draft.native;
+  translation.setAttribute('aria-label', t('问句的{language}', { language: languageName(passage.nativeLanguage) }));
+  row.append(question, translation);
+  return { row, read: () => ({ target: question.value, native: translation.value }) };
 }
 
 /**
@@ -56,7 +58,7 @@ export function mountQuestions(app, parent, signal, passageId, error) {
     try {
       for (const question of findPassage().questions.filter(item => !item.audio)) {
         if (signal.aborted) return;
-        status.textContent = t('正在合成问句的语音：{question}', { question: question.en });
+        status.textContent = t('正在合成问句的语音：{question}', { question: question.target });
         await synthesize(question.id, false);
       }
     } finally {
@@ -68,7 +70,7 @@ export function mountQuestions(app, parent, signal, passageId, error) {
   function questionRow(question) {
     const row = el('div', 'se-sentence');
     const text = el('div', 'se-sentence-text');
-    text.append(el('p', 'se-english', question.en), el('p', 'se-chinese', question.zh));
+    text.append(el('p', 'se-target', question.target), el('p', 'se-native', question.native));
     const controls = el('div', 'se-sentence-controls');
     if (question.audio) app.ui.button(controls, '▶', guarded(() => player.play(question.id)), rows.signal);
     else controls.append(el('span', 'se-muted', busy ? t('等待合成…') : t('还没有语音')));
@@ -93,11 +95,12 @@ export function mountQuestions(app, parent, signal, passageId, error) {
     editing.abort();
     editing = lifetime(signal);
     actions.replaceChildren();
-    const fields = drafts.map(draftRow);
+    const passage = findPassage();
+    const fields = drafts.map(draft => draftRow(draft, passage));
     const buttons = el('div', 'se-actions');
-    editor.replaceChildren(el('p', 'se-muted', t('可以改写；不想要的清空英文那一栏。保存后合成语音。')), ...fields.map(field => field.row), buttons);
+    editor.replaceChildren(el('p', 'se-muted', t('可以改写；不想要的清空{language}那一栏。保存后合成语音。', { language: languageName(passage.targetLanguage) })), ...fields.map(field => field.row), buttons);
     app.ui.button(buttons, t('保存问句'), guarded(async () => {
-      const questions = fields.map(field => field.read()).filter(question => question.en.trim() !== '');
+      const questions = fields.map(field => field.read()).filter(question => question.target.trim() !== '');
       if (questions.length === 0) { closeEditor(); return; }
       const { state } = await app.call('add-questions', { passageId, questions });
       if (signal.aborted) return;

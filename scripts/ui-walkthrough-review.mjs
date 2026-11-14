@@ -47,10 +47,10 @@ const makeDue = sentenceIds => editStore(stored => {
 });
 
 const SENTENCES = [
-  { zh: "我会把这件事告诉他。", en: "I'll tell him about it.", keyExpression: "tell him about it" },
-  { zh: "这事挺难，但我做成了。", en: "I can't believe I pulled it off.", keyExpression: "pulled it off" },
-  { zh: "我昨天本来想把整件事原原本本地告诉他，但是一直没有找到合适的机会。", en: "I wanted to tell him about the whole thing yesterday, but I never got the chance to do it.", keyExpression: "got the chance" },
-  { zh: "就这样。", en: "That's it.", keyExpression: "" },
+  { native: "我会把这件事告诉他。", target: "I'll tell him about it.", keyExpression: "tell him about it" },
+  { native: "这事挺难，但我做成了。", target: "I can't believe I pulled it off.", keyExpression: "pulled it off" },
+  { native: "我昨天本来想把整件事原原本本地告诉他，但是一直没有找到合适的机会。", target: "I wanted to tell him about the whole thing yesterday, but I never got the chance to do it.", keyExpression: "got the chance" },
+  { native: "就这样。", target: "That's it.", keyExpression: "" },
 ];
 
 async function prepare() {
@@ -61,7 +61,7 @@ async function prepare() {
   // One miss is enough to be offered an explanation, so the walkthrough reaches it.
   await call("save-settings", { azureRegion: env.SPEECH_REGION, explainAfterFailures: 1 });
   for (const passage of (await call("get-state")).passages) await call("delete-passage", { passageId: passage.id });
-  const { state } = await call("create-passage", { register: "formal", version: "sentences", chinese: SENTENCES.map(sentence => sentence.zh).join(""), sentences: SENTENCES });
+  const { state } = await call("create-passage", { register: "formal", version: "sentences", nativeLanguage: "zh-CN", targetLanguage: "en-US", source: SENTENCES.map(sentence => sentence.native).join(""), sentences: SENTENCES });
   const ids = state.passages[0].sentences.map(sentence => sentence.id);
   for (const sentenceId of ids) {
     await call("synthesize-sentence", { sentenceId });
@@ -112,7 +112,7 @@ try {
   await click("开始复习");
 
   // Card 1: said within the limits.
-  await front(SENTENCES[0].en);
+  await front(SENTENCES[0].target);
   await shot("r2-front");
   await pause(1200);
   await take(3000);
@@ -122,7 +122,7 @@ try {
   await click("说出来了");
 
   // Card 2: the start limit runs out; the offered explanation is taken and its simpler wording adopted.
-  await front(SENTENCES[1].en);
+  await front(SENTENCES[1].target);
   await waitText(".se-card", "没有在开始时限内开口", 20000);
   console.log("timed out:", await text(".se-card"), "| header:", await text(".se-header"));
   await shot("r4-timed-out");
@@ -143,7 +143,7 @@ try {
   await click("继续");
 
   // Card 3: a long sentence, missed by the learner's own verdict; its explanation should offer a split, which is declined.
-  await front(SENTENCES[2].en);
+  await front(SENTENCES[2].target);
   await pause(1000);
   await take(3000);
   await page.waitForSelector(".se-verdict button");
@@ -158,7 +158,7 @@ try {
   await click("不采用");
 
   // Card 4: missed, but sayable without a time limit: no explanation.
-  await front(SENTENCES[3].en);
+  await front(SENTENCES[3].target);
   await pause(500);
   await take(2000);
   await page.waitForSelector(".se-verdict button");
@@ -184,7 +184,7 @@ try {
   const after = await call("get-state");
   const sentences = after.passages[0].sentences;
   console.log("\nreview:", JSON.stringify({ ...after.review, waiting: after.review.waiting.length }));
-  console.log("sentences:", sentences.map(sentence => `${sentence.id === ids[1] ? "OLD" : ids.includes(sentence.id) ? "kept" : "NEW"} "${sentence.en}" audio=${Boolean(sentence.audio)} recall=${sentence.recall} state=${sentence.schedule?.state ?? "-"} misses=${sentence.misses} explained=${Boolean(sentence.explanation)}`));
+  console.log("sentences:", sentences.map(sentence => `${sentence.id === ids[1] ? "OLD" : ids.includes(sentence.id) ? "kept" : "NEW"} "${sentence.target}" audio=${Boolean(sentence.audio)} recall=${sentence.recall} state=${sentence.schedule?.state ?? "-"} misses=${sentence.misses} explained=${Boolean(sentence.explanation)}`));
   await pause(8000);
   const log = JSON.parse(fs.readFileSync(storeFile, "utf8")).attempts.filter(attempt => attempt.kind === "review");
   console.log("review log:", log.map(attempt => `said=${attempt.said} timedOut=${attempt.timedOut} responseMs=${attempt.responseMs} speakMs=${attempt.speakMs} overall=${attempt.scores?.overall ?? "-"}`));

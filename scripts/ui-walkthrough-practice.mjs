@@ -29,10 +29,10 @@ async function prepare() {
   await call("set-secret", { name: "elevenLabsKey", value: JSON.parse(fs.readFileSync(authFile, "utf8")).ELEVENLABS_API_KEY });
   await call("save-settings", { azureRegion: env.SPEECH_REGION });
   const sentences = [
-    { zh: "我会把这件事告诉他。", en: "I'll tell him about it.", keyExpression: "tell him about it" },
-    { zh: "这事挺难，但我做成了。", en: "I can't believe I pulled it off.", keyExpression: "pulled it off" },
+    { native: "我会把这件事告诉他。", target: "I'll tell him about it.", keyExpression: "tell him about it" },
+    { native: "这事挺难，但我做成了。", target: "I can't believe I pulled it off.", keyExpression: "pulled it off" },
   ];
-  const { state } = await call("create-passage", { register: "formal", version: "sentences", chinese: "我会把这件事告诉他。这事挺难，但我做成了。", sentences });
+  const { state } = await call("create-passage", { register: "formal", version: "sentences", nativeLanguage: "zh-CN", targetLanguage: "en-US", source: "我会把这件事告诉他。这事挺难，但我做成了。", sentences });
   for (const sentence of state.passages[0].sentences) await call("synthesize-sentence", { sentenceId: sentence.id });
 }
 
@@ -88,7 +88,7 @@ try {
 
   // Shadowing.
   await click("分段跟读");
-  await page.waitForSelector(".se-english-large");
+  await page.waitForSelector(".se-target-large");
   await pause(2500);
   await take(4500);
   await waitText(".se-marked, .se-error", ".", 60000);

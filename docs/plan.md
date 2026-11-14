@@ -1,5 +1,5 @@
 # 英语开口练习插件：实现计划（第 4 版）
-> 状态：设计决定已全部确认。阶段 0 已完成，四项假设在开发模式下全部通过，结果见 `docs/phase0-results.md`；桌面版里的录音还没实测（推迟到阶段 2）。阶段 1 已完成：语音模块在 `src/backend/speech/`，离线测试 32 个全部通过（`npm test`），联网检查用 `scripts/live-check.mjs`。阶段 2 已完成：插件骨架、设置页、存储和录入流程，离线测试共 56 个全部通过，并在开发实例里用浏览器走通了「录入 → 确认 → 合成 → 播放」和设置页的麦克风测试。桌面版里的麦克风测试已由你确认通过。阶段 3 已完成：听（整段、逐句、放慢）、分段跟读（红绿标记、听起来像、最近 10 句平均分）、完整跟读（存档第一次和最近一次）、试背（说出来的句子进入 FSRS，第二天到期），离线测试共 74 个全部通过，并用假麦克风在开发实例里走通。阶段 4 已完成：到期复习（FSRS 排期、每日上限、两段时限、超时自动判定、10 分钟后重试）和讲解（先分清缺的是速度还是说法，再请模型讲解，可采用替代说法或拆分方案），离线测试共 96 个全部通过，并用假麦克风在开发实例里走通。阶段 5 已完成：「只听一遍」（可加快到 1.2 倍，没听懂时分成声音或配对）和「接话」（模型生成问句，以段落为单位，自己判断），离线测试共 103 个全部通过，并在开发实例里走通。这一阶段的十一处设计和细节已由你确认，见第 14 节。阶段 5 之后加了两项：快捷键（各练习页面同一套键，页面底部有按键提示）和界面语言（中文或 English，在插件设置里选），离线测试共 113 个全部通过，并用键盘在开发实例里走通，见「阶段 5 之后的补充」。
+> 状态：设计决定已全部确认。阶段 0 已完成，四项假设在开发模式下全部通过，结果见 `docs/phase0-results.md`；桌面版里的录音还没实测（推迟到阶段 2）。阶段 1 已完成：语音模块在 `src/backend/speech/`，离线测试 32 个全部通过（`npm test`），联网检查用 `scripts/live-check.mjs`。阶段 2 已完成：插件骨架、设置页、存储和录入流程，离线测试共 56 个全部通过，并在开发实例里用浏览器走通了「录入 → 确认 → 合成 → 播放」和设置页的麦克风测试。桌面版里的麦克风测试已由你确认通过。阶段 3 已完成：听（整段、逐句、放慢）、分段跟读（红绿标记、听起来像、最近 10 句平均分）、完整跟读（存档第一次和最近一次）、试背（说出来的句子进入 FSRS，第二天到期），离线测试共 74 个全部通过，并用假麦克风在开发实例里走通。阶段 4 已完成：到期复习（FSRS 排期、每日上限、两段时限、超时自动判定、10 分钟后重试）和讲解（先分清缺的是速度还是说法，再请模型讲解，可采用替代说法或拆分方案），离线测试共 96 个全部通过，并用假麦克风在开发实例里走通。阶段 5 已完成：「只听一遍」（可加快到 1.2 倍，没听懂时分成声音或配对）和「接话」（模型生成问句，以段落为单位，自己判断），离线测试共 103 个全部通过，并在开发实例里走通。这一阶段的十一处设计和细节已由你确认，见第 14 节。阶段 5 之后加了两项：快捷键（各练习页面同一套键，页面底部有按键提示）和界面语言（中文或 English，在插件设置里选），离线测试共 113 个全部通过，并用键盘在开发实例里走通，见「阶段 5 之后的补充」。之后又加了母语和学习语言两项设置（33 种语言，默认中文到英语），离线测试和开发实例里的走查结果见「补充：母语和学习语言」；通用提示词的全文已确认，这一版已装进桌面应用。阶段 6（先学一遍：摸底、交给课堂 teacher、朗读和变速听）已实现，离线测试共 203 个全部通过，并在开发实例里走通，见「阶段 6」；讲解要求的措辞和我另外定的十八处已在 2026-11-14 确认，这一版已装进桌面应用，并作为 0.2.0 发布。
 > 
 > 上一版在 `~/src/tries/2026-10-17-amosblomqvist-learnharness/docs/english-speaking-plugin-plan.md`，保留了你的全部批注，我没有再改它。这一版把那些批注的结论合并了进来。
 ## 1. 背景与目标
@@ -427,8 +427,211 @@
 
 实现上，代码里的中文就是英文对照表的键：前端的对照表在 `src/frontend/en.js`，后端的在 `src/backend/messages-en.cjs`。`tests/i18n.test.cjs` 检查每一句界面文字都有英文、占位符一致、没有绕过翻译的中文。
 
-### 阶段 6：交给课堂 teacher（可选）
-把说不出来的句子带进真正的课堂会话。这需要给宿主加一个「由插件新建课堂会话」的接口，属于改核心代码，做之前单独出方案。
+### 补充：母语和学习语言
+
+原来的插件写死了「中文 → 英语」。现在两种语言都可以选，默认仍是中文（普通话，简体）和英语（美国）。
+
+确认过的十一处（2026-11-14）：
+
+1. 母语和学习语言用同一张表：Azure 发音评估支持的 33 个语言和地区。两者不能相同。
+2. 语言对是一项设置，只影响之后新建的段落；每个段落记住自己建立时的语言对。复习队列可以混着不同语言的卡片。
+3. 设置页加两行下拉；录入页顶部常显一行「中文（普通话，简体） → 英语（美国）」和「修改」；第一次打开插件（包括升级后的第一次）首页出现一次确认卡片。
+4. 学习语言是美式英语时，书里两个角色提示词原样保留。其他学习语言用同一段文字的通用版。
+5. 讲解用母语写。中文 → 美式英语继续用批准过的中文提示词，一字不改；其他语言对用内容相同的英文模板。问句用学习语言，附母语翻译。
+6. 非美式英语不显示韵律分和「听起来像」。不分词的语言，逐词标记用 Azure 返回的分词。
+7. 按词数的规则，对不分词的语言改按字数：每句约 40 字以内，超过 24 字才给拆分方案，问句最多 24 字。
+8. 读题速度的单位跟母语走：中、日、韩、泰、粤按每秒字数（默认 5），其他按每秒词数（默认 3）。改母语时重置为对应默认值。
+9. 存储字段改名：`zh`/`en` 改为 `native`/`target`，`chinese` 改为 `source`，`readingCharsPerSecond` 改为 `readingSpeed`。启动时把第 1 版的数据一次性转成第 2 版。
+10. 声音设置不变，合成请求里加 `language_code`。
+11. 界面语言仍只有中文和英文；插件 id 和显示名不改；麦克风测试仍读那句英文并按美式英语评分。
+
+实测结果（2026-11-14，`scripts/language-check.mjs`）：
+
+- 33 个语言和地区各合成一句（`eleven_v4`、Jessica）再送去评分，全部成功。发音总分最低 83.6（越南语），最高 100；日语 87，粤语 90，德语 92，普通话 98。所以不需要按语言换默认声音。
+- 五个语音模型都接受 `language_code`（用日语各试了一次）。
+- 只有美式英语返回韵律分。音素的名字只有美式英语（IPA）和普通话（音节加声调，如 `qi 4`）有，其他语言的音素名是空的。
+- 中文、日语、泰语、粤语的 `Words` 是服务自己分的词（今天 / 天气 / 很 / 好），参考文本按空格切分对不上，所以直接显示服务返回的词，词之间不加空格。
+
+通用提示词由三个文件里的模板生成（`translate-prompts.cjs`、`explain-prompts.cjs`、`question-prompts.cjs`），填入两种语言的名字。下面是「英语 → 日语」生成出来的全文。和批准过的版本相比，改动只有：语言名；学的不是英语时，`short phrasal verbs` 换成 `common everyday expressions`，关键说法的种类写成 `an idiom, a collocation or a set phrase`（学英式、澳式等其他英语时两处都保留 phrasal verbs）；去掉 `New York twist` 和 `NY Speak Easy` 这个名字；字数规则按上面第 7 条；JSON 字段名用 `native` / `target`。
+
+#### 翻译，正式场景（英语 → 日语）
+
+```text
+Your role is to be a language guru, an expert in authentic Japanese, who assists users in expressing their thoughts clearly and fluently. You are not just translating words; you are delving into the essence of the user's message and reconstructing it in a way that maintains logical clarity and coherence. You'll prioritize the use of plain Japanese, common everyday expressions, and common idioms. It's important to craft sentences with varied lengths to create a natural rhythm and flow, making the language sound smooth and engaging. Avoid regional expressions or idioms that are too unique or restricted to specific areas. Your goal is to make Japanese accessible and appealing to a broad audience, helping users communicate effectively in a style that resonates with a wide range of Japanese speakers.
+
+The user gives you a passage in English that they want to say in a formal setting, such as a research group meeting. Express the whole passage in Japanese and return it sentence by sentence.
+
+The user will practise saying your Japanese aloud, one sentence at a time, with the English as the only cue. So:
+- Cover everything the passage says, in the same order. Add nothing.
+- Keep every Japanese sentence short enough to say in one breath: about 40 characters at most. Split a longer thought into several sentences.
+- "native" is the part of the English passage that the Japanese sentence expresses. Reword it only as much as needed for it to read as a complete thought on its own.
+- "key" is the one expression in the Japanese sentence that an English speaker is least likely to come up with: an idiom, a collocation or a set phrase. Copy it exactly as it appears in the sentence.
+- Reply with JSON only. No commentary, no code fence.
+
+Reply in exactly this shape:
+{"sentences":[{"native":"…","target":"…","key":"…"}]}
+```
+
+#### 翻译，口语场景（英语 → 日语）的角色段
+
+```text
+You serve as a spoken-language adviser, specializing in translating the user's words into everyday spoken Japanese, focusing on common everyday expressions and idioms. You provide both a brief and a more elaborate version of each translation, all delivered in a friendly and informal tone to make interactions engaging and approachable. You avoid inappropriate analogies or metaphors and ensure culturally sensitive language. You understand and interpret the context of the user's statements, offering various versions for the user to choose from.
+```
+
+#### 讲解（英语 → 日语）
+
+```text
+You are a speaking coach for Japanese. The learner, whose own language is English, wants to say in Japanese what they mean in English. They are memorizing the Japanese sentence below, but have failed to say it several times, and cannot say it even without a time limit. Find where they get stuck and give a wording that is easier to say.
+
+Rules:
+- Explain in English; keep Japanese examples in Japanese.
+- The difficulties must be specific to this sentence: point to a phrase, a sentence structure, or a place where English and Japanese express things differently. No general grammar lessons. At most three points, one or two sentences each.
+- The simpler wording must say the same thing, suit speech, and be shorter or simpler than the original. Keep the key expression where possible; if the key expression is itself the difficulty, replace it and say why.
+- Offer a split only when the original is longer than 24 characters: two sentences, each sayable on its own, each with its meaning in English. Otherwise set "split" to null.
+- Mispronounced words and sounds are for reference only: mention them only when they clearly get in the way of speaking; do not correct pronunciation item by item.
+- Reply with JSON only, no other text:
+  {"difficulty":["…"],"simpler":{"target":"…","why":"…"},"split":[{"native":"…","target":"…"},{"native":"…","target":"…"}]}
+```
+
+#### 问句（英语 → 日语）
+
+```text
+The learner has memorized a short Japanese passage that says something they want to say in real life. Write 3 different questions that another person might naturally ask, to which this passage would be a natural spoken answer. For the formal register the asker is a colleague in a meeting; for the casual register, a friend in small talk.
+
+Rules:
+- Each question is one short spoken sentence, at most 24 characters, in everyday Japanese.
+- The three differ in wording and angle, so the learner does not get used to one cue.
+- Do not give away the answer: avoid reusing the passage's key expressions.
+- Add an English translation of each question.
+- Reply with JSON only: {"questions":[{"target":"…","native":"…"}]}
+```
+
+数据升级（`src/backend/store-upgrade.cjs`）：读到第 1 版的 `store.json` 时，先把原文件原样另存为同目录下的 `store.v1.json`（已存在就不覆盖），再在内存里改名、给每个段落记上「中文（普通话，简体） → 英语（美国）」。转换后的内容在下一次有改动时才写回 `store.json`。练习记录、排期和音频文件不动。0.1.0 读不了第 2 版的文件，要退回旧版得把 `store.v1.json` 改回 `store.json`。
+
+### 阶段 6：先学一遍，由课堂 teacher 讲解
+**要解决的问题**：录入一段后直接进入跟读和背诵，没有「先学懂」这一步。不认识的词、没听出来的声音、和母语不一样的结构，都留到背不出来的时候才暴露。
+
+**方法来源**：泡芙方《20 天突破英语听力》第一部分的六节课。和这一步有关的要点：
+
+| 课里的说法 | 落在哪里 |
+| --- | --- |
+| 先常速听一遍热身，了解自己能听懂多少（第 3 课） | 摸底第一步 |
+| 听一句复述一句，和原文对照找出缺口；严格版是听写（第 3 课） | 摸底：逐句复述并评分 |
+| 每个词都要确认看得懂，不能靠猜（第 6 课） | 摸底：点出不认识的词；teacher 逐个确认 |
+| 不背连读、弱读规则，把一团声音当成一个整体来认（第 2 课） | teacher 的讲解方式 |
+| 弄懂之后朗读三遍，读的时候意思同步在心里过（第 3、6 课） | 朗读 |
+| 变速听 1 → 1.5 → 2 → 3 倍再降回来；基础弱时每个速度听三遍，跟不上就看着文本听（第 3、6 课） | 变速听 |
+| 影子跟读、逐句背诵、按间隔复习（第 3、5 课） | 已有的跟读、试背和复习 |
+
+**你定下的四件事**（2026-11-14）：
+
+1. 用课堂里真正的 teacher 讲解；测试放在插件里，因为只有插件能放音、录音和评分。
+
+2. 点「交给老师」后由插件新建课堂会话并打开。这走的是宿主的非公开接口，先验证。
+
+3. 发音不讲规则。teacher 把没听出来的地方当作一整块声音来讲，你问了才讲连读、弱读。
+
+4. 这一步可选，排在跟读之前，可以跳过。
+
+
+**流程**：段落页最上面多一行「先学一遍（可选）」，三个入口按顺序排列，都可以单独进。
+
+1. **摸底**（`diagnose-screen.js`）
+
+  - 先不显示文本，常速听整段一遍。
+
+  - 然后逐句：听这一句（可以重听）→ 不看文本复述并录音 → Azure 对照原句评分 → 显示原文和母语意思，没说出来的词划掉、说得不清楚的词标红 → 点出不认识的词，相邻的词算一个短语 → 下一句。
+
+  - 复述不出来可以点「说不出来，看原文」，这一句记为「没能复述」，照样可以点词。
+
+  - 每句存三样：没说出来的词、说得不清楚的词、不认识的词或短语。复述的录音不进练习记录。
+
+  - 点「开始逐句摸底」时才清掉上一次的结果；中途退出，已做的句子保留。
+
+2. **摸底结果**（`gaps-screen.js`）：逐句列出缺口，下面是「交给老师」「朗读和变速听」「重新摸底」。
+
+3. **交给老师**（`lesson-start.js`、`lesson.cjs`）
+
+  - 插件新建一节课，第一条消息是「教我「开口练习」里的这一段：<第一句的母语原文>」，自动发出并打开。课的标题也是这句话。
+
+  - 插件给课堂里的 prober 和 teacher 加一个工具 `speaking_practice_lesson`，只在由插件开的课里出现。它返回这一段的句子、母语意思、关键说法、每句的摸底结果和讲解要求。
+
+  - 插件另外给这两个代理加一句固定指令，见下。别的课里没有这个工具，这句指令不起作用。
+
+  - 没做摸底也可以交给老师，讲解要求会换成「先问清楚哪些词和句子不懂」。
+
+  - 开过课之后，按钮变成「打开这节课」和「重新开课」（要点两次确认）。
+
+  - 应用里没有配置上课用的模型时不新建会话，直接提示去配置。
+
+4. **朗读和变速听**（`consolidate-screen.js`）
+
+  - 朗读：显示全文，自己读，读完一遍点一次，不录音。显示「已读 n 遍（建议 3 遍）」。
+
+  - 变速听：整段按 1 → 1.5 → 2 → 3 → 2 → 1.5 → 1 倍连续播放。开始时自动收起文本，可以再打开；有「每个速度听 3 遍」的开关。听完一整轮才计数。
+
+
+之后接现有的分段跟读 → 完整跟读 → 试背 → 复习，不变。
+
+**固定指令的全文**（英文，进入每节课的 prober 和 teacher 的系统提示词）：
+
+```text
+If the tool speaking_practice_lesson is available, this session was started from the Speak English plugin: call it before anything else and follow the guide it returns.
+```
+
+**讲解要求的全文**（工具返回内容的最后一部分，英文；`{native}` 和 `{target}` 换成语言名；`src/backend/lesson-guide.cjs`）。prober 和 teacher 读到的是同一份：teacher 接着 prober 的对话往下讲，不一定会再调用一次工具。
+
+```text
+The learner is about to drill this passage aloud in the Speak English plugin (its sidebar entry reads "开口练习" or "Speak English"): shadowing, then reciting each sentence from memory, then spaced review. This session is the step before that. Its goal is that the learner understands every word and every sentence of the passage, so that the later practice is not parroting. The goal is fixed: do not ask the learner what it is.
+
+What the diagnostic means. The learner heard each sentence once without seeing it and repeated it aloud; the recording was scored against the sentence. "Not said" lists the words that were missing from the repetition: the learner may not have caught them by ear, may not know them, or may only have forgotten them. "Said unclearly" lists the words the scoring heard as something else. "Marked unknown" lists the words and phrases the learner marked as not understood after seeing the text. "Could not repeat" means the learner could not say the sentence back at all. A sentence with none of these had no gap.
+
+While probing. The passage is the whole territory: do not probe the learner's general level of {target}. The lists are the learner's own account and can be optimistic. Spot-check them: for a few of the "Not said" and "Said unclearly" words, find out whether the learner knows what the word means in this sentence (then the gap is the sound) or not (then the gap is the word). Check the key expressions the learner did not mark the same way. About five questions in all are enough. Explain nothing while probing. When you conclude the probe, name one strand per sentence that has a gap, and say for each item whether it is a word the learner does not know or a sound they did not catch.
+
+While teaching:
+- Go through the sentences that have gaps, in order. Leave the other sentences alone unless the learner asks.
+- A word the learner does not know: give its meaning in this sentence and one more short example. Do not accept guessing; check that the learner can now say what it means here.
+- A word the learner knows on paper but did not catch or said unclearly: the problem is the sound, not the meaning. Do not teach rules of linking, reduction or elision, and do not drill single sounds, unless the learner asks. Treat the stretch of the sentence around the word as one chunk of sound with one meaning, the way "not at all" is heard as a single unit. Spell out roughly how the chunk sounds at natural speed and tell the learner to listen for it as a whole.
+- A structure that works differently from {native}: say what differs in one or two sentences. No general grammar lessons.
+- Each sentence's key expression is the part the learner is least likely to come up with. Make sure it is understood even when it was not marked.
+- You cannot play audio and cannot hear the learner. Do not pretend to. Listening and speaking come next, in the plugin.
+- When every gap is covered, close the session: tell the learner to go back to the plugin, read the passage aloud three times with the meaning in mind, do the speed-listening run, and then start shadowing.
+
+Throughout, ask and explain in {native}; keep {target} words and examples in {target}.
+```
+
+没有摸底结果时，其中两处换成：
+
+```text
+The learner has not taken the listening diagnostic for this passage, so nothing is known yet about where the gaps are.
+
+While probing. The passage is the whole territory: do not probe the learner's general level of {target}. Ask which words and sentences the learner does not understand, then check each sentence's key expression: can the learner say what it means here? About five questions in all are enough. Explain nothing while probing. When you conclude the probe, name one strand per sentence that has a gap, and say for each item whether it is a word the learner does not know or a sound they did not catch.
+```
+
+**数据**：段落上新增三项，都可以没有，所以不改存储版本号，旧数据照常能读。
+
+| 字段 | 内容 |
+| --- | --- |
+| `diagnosis` | 摸底时间；每句是否复述了、没说出来的词、说得不清楚的词、点出的不认识的词或短语 |
+| `lesson` | 课堂会话的编号和开课时间 |
+| `consolidation` | 朗读了几遍、变速听完成了几轮、最近一次的时间 |
+
+**这一版不做**：噪音训练；把 teacher 的讲解存回插件的句子；在课堂里直接放音和录音（需要自定义题型）。
+
+**验证结果**
+
+- 先验证（`spikes/phase6/`）：一个一次性的小插件在开发实例里确认了三件事。插件前端照宿主首页的做法新建会话并留下第一条消息，`ctx.app.openSession` 打开后消息自动发出；prober 的第一个动作就是调用插件的工具；工具拿到的会话编号和新建的一致。
+
+- 离线测试共 203 个全部通过，其中 20 个是这一阶段新增的（`tests/study.test.cjs`）。
+
+- 一次独立的代码审查提出 13 处问题，修了 11 处，修完后界面走查重跑通过。没修的两处：点词只能用鼠标，不能用键盘；摸底词表的长度上限偏宽（每句三个列表，各最多 200 项、每项 400 个字符），界面走不到这个上限。
+
+- 界面走查（`scripts/ui-walkthrough-study.mjs`，真实调用 ElevenLabs、Azure 和模型）全部通过：摸底里一句复述并评分、一句放弃，点词；结果页；交给老师后课自动打开、第一条消息发出、工具返回段落和摸底结果；朗读计数；变速听跑完一轮并计数。
+
+- 用 `deepseek-v4-pro` 把一节课推进到了讲解阶段：prober 只针对标出的词提问，摸底结论按句区分了「声音缺口」和「词义缺口」；teacher 的教学计划是「不教词义，只教怎么整块听」和「习语直接给意思，配一个例句」，没有再调用工具，用的是对话里已有的讲解要求。
+
+
+**没有验证到的**：teacher 逐步讲解的全过程（只看到了计划）；你平时上课用的模型；中文到英语以外的语言对；没做摸底就交给老师的那条路径只有离线测试。
 ### 下一版再做
 - **整段跟读评分**：引入微软的 JS 语音 SDK（约 5.6 MB）做连续识别，给整段一个分数和红绿标记。做之前先验证这个 SDK 能否打包进插件后端。
   
@@ -441,6 +644,8 @@
 | 禁用与重启 | 禁用再启用、重启应用后，数据仍在 |
 ## 12. 风险
 - **录音走的是非公开途径。** 插件接口只有听写控件，给文字不给音频。宿主升级后可能失效。阶段 0 先验证。
+  
+- **交给老师走的也是非公开途径。** 新建课堂会话用的是宿主自己的 `POST /api/chats`，第一条消息留在 `sessionStorage` 的 `lh.openingPrompt.<会话编号>` 里，由课堂页面发出。两处都不在插件接口里，宿主升级后可能失效。失效时点「交给老师」会报错，不影响别的练习。
   
 - **「听起来像」会误报。** 正常的口音变体也会被标出来，见 6.2 节。
   
@@ -472,6 +677,45 @@
 7. 英文界面的用词：分段跟读 Shadowing、完整跟读 Read-along、试背 Recall、到期复习 Due reviews、只听一遍 Listen once、接话 Respond、说出来了 Said it、没说出来 Missed it、讲解 Explain。全部英文在 `src/frontend/en.js` 和 `src/backend/messages-en.cjs`。
   
 
+母语和学习语言实现时我另外定的几处：
+
+1. 把一边选成另一边已有的语言时，两者对调。否则用两个下拉框没法把「中文 → 英语」换成「英语 → 中文」。
+2. 读题速度的设置只用于和当前母语同一种算法（按字或按词）的段落。算法不同的旧段落用那种算法的默认值（每秒 5 个字或 3 个词）。
+3. 试背和复习的卡片上，「场景」后面加学习语言的名字（如「场景：正式（组会） · 日语」）；首页段落列表的摘要里也加。混着几种语言时，光看母语的题目不知道该说哪种语言。
+4. 确认卡片点「修改」时就算已确认，两个下拉框在卡片里原地出现；录入页的「修改」也是原地展开。
+5. 没有名字的音素不显示，也不进练习记录。普通话的提示写成「今天：/jin 1/ 不够清楚」。
+6. 界面上的字段用语言的简称（「中文意图」「日语」），原来写「英文」的地方现在是「英语」。后端的错误信息不提具体语言（「两种语言的内容都不能为空」）。
+7. 模型回复里的字段名：中文 → 美式英语沿用 `zh` / `en`，这样批准过的提示词一个字符都不变（测试里有校验）；其他语言对用 `native` / `target`。
+8. 每句的长度上限统一为 400 个字符（原来中文 300、英文 400）。
+9. 升级前把旧文件另存为 `store.v1.json`。
+10. 录入页的篇幅提示和计数跟母语走：「100 到 150 字」或「60 到 100 词」。
+11. 版本号还没改。存储格式变了，发布时建议定为 0.2.0。
+
+通用提示词的全文和上面十一处已在 2026-11-14 确认；新版已装进桌面应用，重启后第一次启动会转换真实数据并留下 `store.v1.json`。版本号、提交和发布和阶段 6 一起做，见 0.2.0。
+
+阶段 6（先学一遍）实现时我另外定的几处：
+
+1. 摸底每句存三样：没说出来的词、说得不清楚的词、点出的不认识的词或短语。「哪里需要讲解」不单独记，由 teacher 根据这三样和每句的关键说法判断。
+2. 复述不出来时可以点「说不出来，看原文」，这一句记为「没能复述」。
+3. 点词时相邻的词合成一个短语。不分词的语言在没有评分时用浏览器自带的分词。
+4. 摸底里的复述不进练习记录，不影响「常读错的词」和跟读平均分。
+5. 摸底需要 Azure 评分和已合成的语音；有句子没语音时提示先回段落页合成。
+6. 点「开始逐句摸底」时才清掉上一次的结果。摸底结果单独一页，做过之后段落页的按钮变成「摸底结果」。
+7. 课的第一条消息（也是课的标题）是「教我「开口练习」里的这一段：」加第一句的母语原文，最多 60 个字符，用界面语言。
+8. prober 和 teacher 读同一份讲解要求。原因：teacher 接着 prober 的对话，实测它不会再调用一次工具。
+9. 讲解要求里你没有逐条看过的内容：prober 不问目标、不测整体水平、抽查约五个问题、只测不讲，结束时按句说明是词的缺口还是声音的缺口；teacher 不逐个音纠正、每句的关键说法即使没标也要确认、不假装能放音、讲完后让你回插件朗读三遍和变速听。
+10. 「重新开课」要点两次确认。旧的那节课不删除，只是段落改为指向新的课。
+11. 应用里没有配置上课用的模型时不新建会话，直接提示。宿主版本太旧、不能扩展课堂代理时，点「交给老师」提示更新应用。
+12. 朗读自己点「读完一遍」，不录音不评分，显示累计遍数。变速听开始时自动收起文本，中途停止的一轮不计数，快捷键 R 开始或停止。
+13. 版本号在确认前不改。
+14. 录复述的时候不能放原声，否则麦克风会把答案录进去。
+15. 评分后显示的词和原句对不上时（不分词的语言总是这样，评分服务会去掉标点），在标记的词上面多显示一行原句。
+16. 采用讲解里的替代说法或拆分后，被替换的那句的摸底结果一并删除；一段里的摸底结果删光了，就当作没摸过底。
+17. 一节课只属于一个段落。「交给老师」中途失败后再点，接着用上次建好的那节课，不再多建一节。
+18. 点了「交给老师」又离开这一页，课照样建好并记在段落上，但不会自动跳到课堂。
+
+讲解要求的全文（见「阶段 6」）和上面十八处已在 2026-11-14 确认。
+
 ## 14. 决定记录
 | 日期  | 决定  |
 | --- | --- |
@@ -488,3 +732,7 @@
 | 2026-11-14 | 阶段 5 的十一处确认：「只听一遍」用现有语音加 1.2 倍开关、由自己判断；「接话」的问句由模型生成（提示词在 `src/backend/question-prompts.cjs`）、以段落为单位且不评分；可改口「其实没听懂」；归为声音后可再听和慢速听；每轮最多 5 段、每段随机一个问句；每段最多 6 个问句、一次生成 3 个；问句放完才能开口、回答最长为整段原声的 2 倍且不超过 3 分钟；「接上了」不要求一字不差或说完整段；新设置「问句的声音」默认 Eric |
 | 2026-11-14 | 加快捷键和界面语言（中文 / English）。确认的八处：语言设置默认中文、标签双语；按钮、提示、建议、错误信息、日期都切换；讲解始终用中文；侧边栏入口重启后更新、插件列表名称不变；按键表（空格、方向键和 Enter、R、M、S、1、2、A、E）；「一看就懂 / 看了还是不懂」用 1 / 2；页面底部加按键提示；删除、采用、返回不给键，按键不可自定义 |
 | 2026-11-14 | 代码公开在 GitHub（`wangdepin/speak-english-plugin`），许可证 AGPL-3.0-only；发布 0.1.0，发布包是 `speak-english-0.1.0.zip` 加 SHA-256 校验和 |
+| 2026-11-14 | 加母语和学习语言两项设置，默认中文（普通话，简体）和英语（美国）。确认的十一处见「补充：母语和学习语言」：33 种语言、设置只影响新段落、首次确认卡片、美式英语保留书里的提示词而其他语言用通用版、讲解用母语、非美式英语不显示韵律和「听起来像」、不分词的语言按字数、读题速度的单位跟母语、存储字段改名并升级旧数据、声音不变加 `language_code`、界面语言和插件名不动 |
+| 2026-11-14 | 通用提示词的全文确认（`src/backend/translate-prompts.cjs`、`explain-prompts.cjs`、`question-prompts.cjs` 里的通用版）；第 13 节里母语和学习语言的十一处自定决定确认；同意把新版装进桌面应用并升级已有数据 |
+| 2026-11-14 | 加「先学一遍」（阶段 6），方法参考泡芙方《20 天突破英语听力》第一部分。确认的四处：用课堂里真正的 teacher 讲解、测试放在插件里；点「交给老师」由插件新建课堂会话并打开，先验证；发音不讲规则，按整块声音讲，问了才讲连读弱读；这一步可选，排在跟读之前 |
+| 2026-11-14 | 阶段 6 讲解要求的全文（`src/backend/lesson-guide.cjs`）和第 13 节里阶段 6 的十八处自定决定确认；同意装进桌面应用，提交、推送并发布 0.2.0（母语和学习语言、先学一遍） |

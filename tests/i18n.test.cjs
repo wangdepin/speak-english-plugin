@@ -15,7 +15,7 @@ const SRC = path.join(__dirname, '..', 'src');
 const load = name => import(pathToFileURL(path.join(SRC, 'frontend', name)).href);
 const CJK = /[一-鿿]/;
 // Text sent to the model, not shown in the interface: it stays Chinese by decision.
-const PROMPT_FILES = ['explain-prompts.cjs', 'translate-prompts.cjs', 'question-prompts.cjs'];
+const PROMPT_FILES = ['explain-prompts.cjs', 'translate-prompts.cjs', 'question-prompts.cjs', 'lesson-guide.cjs'];
 // Language names are shown in their own language whatever the interface language is.
 const UNTRANSLATED = ["'中文'", "'界面语言 / Language'"];
 

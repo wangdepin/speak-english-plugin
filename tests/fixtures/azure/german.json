@@ -1,0 +1,499 @@
+{
+ "referenceText": "Heute ist schönes Wetter, lass uns im Park spazieren gehen.",
+ "status": 200,
+ "contentType": "application/json; charset=utf-8",
+ "body": {
+  "RecognitionStatus": "Success",
+  "Offset": 400000,
+  "Duration": 34500000,
+  "DisplayText": "Heute ist schönes Wetter. Lass uns im Park spazieren gehen.",
+  "SNR": 36.348038,
+  "NBest": [
+   {
+    "Confidence": 0.9887885,
+    "Lexical": "Heute ist schönes Wetter lass uns im Park spazieren gehen",
+    "ITN": "Heute ist schönes Wetter lass uns im Park spazieren gehen",
+    "MaskedITN": "heute ist schönes wetter lass uns im park spazieren gehen",
+    "Display": "Heute ist schönes Wetter. Lass uns im Park spazieren gehen.",
+    "AccuracyScore": 91,
+    "FluencyScore": 99,
+    "CompletenessScore": 90,
+    "PronScore": 92,
+    "Words": [
+     {
+      "Word": "Heute",
+      "Offset": 400000,
+      "Duration": 3400000,
+      "Confidence": 0,
+      "AccuracyScore": 94,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "heu",
+        "Offset": 400000,
+        "Duration": 2300000,
+        "AccuracyScore": 94
+       },
+       {
+        "Syllable": "",
+        "Grapheme": "te",
+        "Offset": 2800000,
+        "Duration": 1000000,
+        "AccuracyScore": 94
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 400000,
+        "Duration": 1300000,
+        "AccuracyScore": 94
+       },
+       {
+        "Phoneme": "",
+        "Offset": 1800000,
+        "Duration": 900000,
+        "AccuracyScore": 94
+       },
+       {
+        "Phoneme": "",
+        "Offset": 2800000,
+        "Duration": 300000,
+        "AccuracyScore": 94
+       },
+       {
+        "Phoneme": "",
+        "Offset": 3200000,
+        "Duration": 600000,
+        "AccuracyScore": 94
+       }
+      ]
+     },
+     {
+      "Word": "ist",
+      "Offset": 3900000,
+      "Duration": 2200000,
+      "Confidence": 0,
+      "AccuracyScore": 59,
+      "ErrorType": "Mispronunciation",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "ist",
+        "Offset": 3900000,
+        "Duration": 2200000,
+        "AccuracyScore": 91
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 3900000,
+        "Duration": 800000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 4800000,
+        "Duration": 300000,
+        "AccuracyScore": 49
+       },
+       {
+        "Phoneme": "",
+        "Offset": 5200000,
+        "Duration": 900000,
+        "AccuracyScore": 100
+       }
+      ]
+     },
+     {
+      "Word": "schönes",
+      "Offset": 6200000,
+      "Duration": 2900000,
+      "Confidence": 0,
+      "AccuracyScore": 100,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "schö",
+        "Offset": 6200000,
+        "Duration": 900000,
+        "AccuracyScore": 100
+       },
+       {
+        "Syllable": "",
+        "Grapheme": "nes",
+        "Offset": 7200000,
+        "Duration": 1900000,
+        "AccuracyScore": 100
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 6200000,
+        "Duration": 300000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 6600000,
+        "Duration": 500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 7200000,
+        "Duration": 700000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 8000000,
+        "Duration": 500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 8600000,
+        "Duration": 500000,
+        "AccuracyScore": 100
+       }
+      ]
+     },
+     {
+      "Word": "Wetter",
+      "Offset": 9200000,
+      "Duration": 6200000,
+      "Confidence": 0,
+      "AccuracyScore": 91,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "wet",
+        "Offset": 9200000,
+        "Duration": 1500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Syllable": "",
+        "Grapheme": "ter",
+        "Offset": 10800000,
+        "Duration": 4600000,
+        "AccuracyScore": 81
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 9200000,
+        "Duration": 700000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 10000000,
+        "Duration": 700000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 10800000,
+        "Duration": 900000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 11800000,
+        "Duration": 3600000,
+        "AccuracyScore": 76
+       }
+      ]
+     },
+     {
+      "Word": "lass",
+      "Offset": 15700000,
+      "Duration": 3200000,
+      "Confidence": 0,
+      "AccuracyScore": 100,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "lass",
+        "Offset": 15700000,
+        "Duration": 3200000,
+        "AccuracyScore": 100
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 15700000,
+        "Duration": 2000000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 17800000,
+        "Duration": 600000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 18500000,
+        "Duration": 400000,
+        "AccuracyScore": 100
+       }
+      ]
+     },
+     {
+      "Word": "uns",
+      "Offset": 19000000,
+      "Duration": 1500000,
+      "Confidence": 0,
+      "AccuracyScore": 100,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "uns",
+        "Offset": 19000000,
+        "Duration": 1500000,
+        "AccuracyScore": 100
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 19000000,
+        "Duration": 500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 19600000,
+        "Duration": 500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 20200000,
+        "Duration": 300000,
+        "AccuracyScore": 100
+       }
+      ]
+     },
+     {
+      "Word": "im",
+      "Offset": 20600000,
+      "Duration": 1300000,
+      "Confidence": 0,
+      "AccuracyScore": 100,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "im",
+        "Offset": 20600000,
+        "Duration": 1300000,
+        "AccuracyScore": 100
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 20600000,
+        "Duration": 500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 21200000,
+        "Duration": 700000,
+        "AccuracyScore": 100
+       }
+      ]
+     },
+     {
+      "Word": "Park",
+      "Offset": 22000000,
+      "Duration": 2500000,
+      "Confidence": 0,
+      "AccuracyScore": 94,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "park",
+        "Offset": 22000000,
+        "Duration": 2500000,
+        "AccuracyScore": 94
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 22000000,
+        "Duration": 900000,
+        "AccuracyScore": 94
+       },
+       {
+        "Phoneme": "",
+        "Offset": 23000000,
+        "Duration": 400000,
+        "AccuracyScore": 94
+       },
+       {
+        "Phoneme": "",
+        "Offset": 23500000,
+        "Duration": 400000,
+        "AccuracyScore": 94
+       },
+       {
+        "Phoneme": "",
+        "Offset": 24000000,
+        "Duration": 500000,
+        "AccuracyScore": 94
+       }
+      ]
+     },
+     {
+      "Word": "spazieren",
+      "Offset": 24600000,
+      "Duration": 5700000,
+      "Confidence": 0,
+      "AccuracyScore": 79,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "spa",
+        "Offset": 24600000,
+        "Duration": 2100000,
+        "AccuracyScore": 79
+       },
+       {
+        "Syllable": "",
+        "Grapheme": "zie",
+        "Offset": 26800000,
+        "Duration": 1900000,
+        "AccuracyScore": 79
+       },
+       {
+        "Syllable": "",
+        "Grapheme": "ren",
+        "Offset": 28800000,
+        "Duration": 1500000,
+        "AccuracyScore": 79
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 24600000,
+        "Duration": 800000,
+        "AccuracyScore": 79
+       },
+       {
+        "Phoneme": "",
+        "Offset": 25500000,
+        "Duration": 400000,
+        "AccuracyScore": 79
+       },
+       {
+        "Phoneme": "",
+        "Offset": 26000000,
+        "Duration": 700000,
+        "AccuracyScore": 79
+       },
+       {
+        "Phoneme": "",
+        "Offset": 26800000,
+        "Duration": 900000,
+        "AccuracyScore": 79
+       },
+       {
+        "Phoneme": "",
+        "Offset": 27800000,
+        "Duration": 900000,
+        "AccuracyScore": 79
+       },
+       {
+        "Phoneme": "",
+        "Offset": 28800000,
+        "Duration": 300000,
+        "AccuracyScore": 79
+       },
+       {
+        "Phoneme": "",
+        "Offset": 29200000,
+        "Duration": 500000,
+        "AccuracyScore": 79
+       },
+       {
+        "Phoneme": "",
+        "Offset": 29800000,
+        "Duration": 500000,
+        "AccuracyScore": 79
+       }
+      ]
+     },
+     {
+      "Word": "gehen",
+      "Offset": 30400000,
+      "Duration": 4500000,
+      "Confidence": 0,
+      "AccuracyScore": 97,
+      "ErrorType": "None",
+      "Syllables": [
+       {
+        "Syllable": "",
+        "Grapheme": "ge",
+        "Offset": 30400000,
+        "Duration": 1500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Syllable": "",
+        "Grapheme": "hen",
+        "Offset": 32000000,
+        "Duration": 2900000,
+        "AccuracyScore": 80
+       }
+      ],
+      "Phonemes": [
+       {
+        "Phoneme": "",
+        "Offset": 30400000,
+        "Duration": 500000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 31000000,
+        "Duration": 900000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 32000000,
+        "Duration": 1000000,
+        "AccuracyScore": 100
+       },
+       {
+        "Phoneme": "",
+        "Offset": 33100000,
+        "Duration": 1800000,
+        "AccuracyScore": 69
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

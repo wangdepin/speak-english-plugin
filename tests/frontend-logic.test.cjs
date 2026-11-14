@@ -47,9 +47,46 @@ test('when the service splits the sentence differently, its own words are shown'
   assert.deepEqual(markWords('2 AM', { words: [word('two'), word('a'), word('m')] }).words.map(item => item.text), ['two', 'a', 'm']);
 });
 
-test('the score line shows a dash for a missing score', async () => {
+test('the score line shows a dash for a missing score, and no prosody where the language has none', async () => {
   const { scoreLine } = await load('word-marking.js');
-  assert.equal(scoreLine({ overall: 96, accuracy: 98, fluency: 100, completeness: 100, prosody: null }), '总分 96 · 准确 98 · 流利 100 · 完整 100 · 韵律 —');
+  assert.equal(scoreLine({ overall: 96, accuracy: null, fluency: 100, completeness: 100, prosody: 91 }), '总分 96 · 准确 — · 流利 100 · 完整 100 · 韵律 91');
+  assert.equal(scoreLine(recorded('german')[1].scores), '总分 92 · 准确 91 · 流利 99 · 完整 90');
+});
+
+test('a sentence written without spaces is shown as the service divided it, with named sounds only', async () => {
+  const { markWords } = await load('word-marking.js');
+  const mandarin = markWords(...recorded('mandarin'));
+  assert.deepEqual(mandarin.words.map(word => word.text), ['今天', '天气', '很', '好', '我们', '去', '公园', '散步', '吧']);
+  assert.ok(mandarin.words.every(word => word.status === 'good'));
+  const japanese = markWords(...recorded('japanese'));
+  assert.equal(japanese.words.map(word => word.text).join(''), '今日は天気がいいので公園を散歩しましょう');
+  assert.deepEqual(japanese.hints, [], 'sounds the service does not name are not listed');
+  const german = markWords(...recorded('german'));
+  assert.deepEqual(german.words.filter(word => word.status === 'wrong').map(word => word.text), ['ist']);
+  assert.deepEqual(german.hints, []);
+});
+
+test('the frontend and the backend agree on the languages and how each is counted', async () => {
+  const frontend = await load('languages.js');
+  const backend = require('../src/backend/languages.cjs');
+  const counted = languages => Object.entries(languages).map(([code, language]) => [code, language.spaced, language.readBy]);
+  assert.deepEqual(counted(frontend.LANGUAGES), counted(backend.LANGUAGES));
+  assert.deepEqual(frontend.DEFAULT_READING_SPEED, { char: 5, word: 3 });
+  assert.deepEqual(frontend.DEFAULT_READING_SPEED, backend.DEFAULT_READING_SPEED);
+});
+
+test('languages are named in the interface language, with the region where one language has several', async () => {
+  const { languageName, languageLabel, languageOptions, LANGUAGE_CODES } = await load('languages.js');
+  const { setLanguage } = await load('i18n.js');
+  assert.deepEqual([languageName('en-US'), languageLabel('en-US'), languageLabel('ja-JP'), languageLabel('zh-CN')], ['英语', '英语（美国）', '日语', '中文（普通话，简体）']);
+  assert.equal(new Set(languageOptions().map(option => option.label)).size, LANGUAGE_CODES.length, 'no two languages share a label');
+  setLanguage('en');
+  try {
+    assert.deepEqual([languageName('en-US'), languageLabel('en-US'), languageLabel('zh-HK')], ['English', 'English (United States)', 'Cantonese (Hong Kong, Traditional)']);
+    assert.equal(new Set(languageOptions().map(option => option.label)).size, LANGUAGE_CODES.length);
+  } finally {
+    setLanguage('zh');
+  }
 });
 
 test('the browser-side WAV encoder produces exactly what the scoring check accepts', async () => {
@@ -65,14 +102,28 @@ test('the browser-side WAV encoder produces exactly what the scoring check accep
 });
 
 test('the start limit is reading time, rounded up, plus thinking time; punctuation is not read', async () => {
-  const { countedChars, startLimitMs, secondsLeft } = await load('time-limits.js');
-  const settings = { readingCharsPerSecond: 5, startAllowanceSeconds: 3 };
-  assert.equal(countedChars('这事挺难，但我做成了。'), 9);
-  assert.equal(startLimitMs({ zh: '这事挺难，但我做成了。' }, settings), 5000);
-  assert.equal(startLimitMs({ zh: '字'.repeat(10) }, settings), 5000);
-  assert.equal(startLimitMs({ zh: '字'.repeat(25) }, settings), 8000);
-  assert.equal(startLimitMs({ zh: '字'.repeat(25) }, { readingCharsPerSecond: 10, startAllowanceSeconds: 0 }), 3000);
+  const { startLimitMs, secondsLeft } = await load('time-limits.js');
+  const { readingLength } = await load('languages.js');
+  const chinese = { nativeLanguage: 'zh-CN' };
+  const settings = { nativeLanguage: 'zh-CN', readingSpeed: 5, startAllowanceSeconds: 3 };
+  assert.equal(readingLength('这事挺难，但我做成了。', 'zh-CN'), 9);
+  assert.equal(startLimitMs({ native: '这事挺难，但我做成了。' }, chinese, settings), 5000);
+  assert.equal(startLimitMs({ native: '字'.repeat(10) }, chinese, settings), 5000);
+  assert.equal(startLimitMs({ native: '字'.repeat(25) }, chinese, settings), 8000);
+  assert.equal(startLimitMs({ native: '字'.repeat(25) }, chinese, { nativeLanguage: 'zh-CN', readingSpeed: 10, startAllowanceSeconds: 0 }), 3000);
   assert.deepEqual([secondsLeft(5000, 0), secondsLeft(5000, 4001), secondsLeft(5000, 4999), secondsLeft(5000, 6000)], [5, 1, 1, 0]);
+});
+
+test('a cue is read in words or in characters, by the language its passage was written in', async () => {
+  const { startLimitMs } = await load('time-limits.js');
+  const { readingLength } = await load('languages.js');
+  const english = { nativeLanguage: 'en-US' };
+  const cue = { native: "I can't believe I pulled it off, to be honest." };
+  assert.deepEqual([readingLength(cue.native, 'en-US'), readingLength('  ', 'en-US'), readingLength('오늘 날씨가 좋아요.', 'ko-KR')], [10, 0, 8]);
+  assert.equal(startLimitMs(cue, english, { nativeLanguage: 'en-US', readingSpeed: 3, startAllowanceSeconds: 3 }), 7000);
+  assert.equal(startLimitMs(cue, english, { nativeLanguage: 'de-DE', readingSpeed: 5, startAllowanceSeconds: 0 }), 2000, 'another language counted in words uses the same setting');
+  assert.equal(startLimitMs(cue, english, { nativeLanguage: 'zh-CN', readingSpeed: 9, startAllowanceSeconds: 0 }), 4000, 'a setting in characters does not apply to a cue counted in words: 3 words a second');
+  assert.equal(startLimitMs({ native: '字'.repeat(25) }, { nativeLanguage: 'zh-CN' }, { nativeLanguage: 'en-US', readingSpeed: 3, startAllowanceSeconds: 0 }), 5000, 'and the other way round: 5 characters a second');
 });
 
 test('the speaking limit follows the reference audio, within 4 to 30 seconds', async () => {

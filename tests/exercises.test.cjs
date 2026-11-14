@@ -2,25 +2,76 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createBackend } = require('../src/backend/backend.cjs');
 const { parseQuestions } = require('../src/backend/questions.cjs');
-const { QUESTION_SYSTEM_PROMPT } = require('../src/backend/question-prompts.cjs');
+const { questionSystemPrompt, questionUserPrompt } = require('../src/backend/question-prompts.cjs');
+const { replyKeys } = require('../src/backend/languages.cjs');
 const { fixtureBytes } = require('./helpers.cjs');
 
+const sha16 = text => createHash('sha256').update(text).digest('hex').slice(0, 16);
 const attemptId = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const suggested = [{ en: 'How did the project go?', zh: '项目怎么样了？' }, { en: 'Did it work out in the end?', zh: '最后成了吗？' }, { en: 'Any news on that?', zh: '那件事有消息吗？' }];
+const ORIGINAL_KEYS = replyKeys('zh-CN', 'en-US');
+const GENERAL_KEYS = replyKeys('en-US', 'ja-JP');
+
+const suggested = [{ target: 'How did the project go?', native: '项目怎么样了？' }, { target: 'Did it work out in the end?', native: '最后成了吗？' }, { target: 'Any news on that?', native: '那件事有消息吗？' }];
+const suggestedReply = suggested.map(question => ({ en: question.target, zh: question.native }));
+// Outside the original pair a reply already uses the field names a question is stored under.
+const japaneseSuggested = [{ target: 'プロジェクトはどうでしたか？', native: 'How did the project go?' }, { target: '結局うまくいきましたか？', native: 'Did it work out in the end?' }];
 
 test('suggested questions are read from the reply, at most three, unusable ones dropped', () => {
-  assert.deepEqual(parseQuestions(JSON.stringify({ questions: suggested })), suggested);
-  const messy = { questions: [{ en: ' ', zh: '空' }, { en: 'So,  how was it?' }, ...suggested] };
-  assert.deepEqual(parseQuestions(`\`\`\`json\n${JSON.stringify(messy)}\n\`\`\``), [{ en: 'So, how was it?', zh: '' }, suggested[0], suggested[1]]);
-  for (const bad of ['no json', '{"questions":[]}', '{"questions":[{"zh":"只有中文"}]}', `{"questions":[{"en":"${'x'.repeat(201)}"}]}`]) assert.throws(() => parseQuestions(bad), /不是预期的格式/, bad);
+  assert.deepEqual(parseQuestions(JSON.stringify({ questions: suggestedReply }), ORIGINAL_KEYS), suggested);
+  const messy = { questions: [{ en: ' ', zh: '空' }, { en: 'So,  how was it?' }, ...suggestedReply] };
+  assert.deepEqual(parseQuestions(`\`\`\`json\n${JSON.stringify(messy)}\n\`\`\``, ORIGINAL_KEYS), [{ target: 'So, how was it?', native: '' }, suggested[0], suggested[1]]);
+  for (const bad of ['no json', '{"questions":[]}', '{"questions":[{"zh":"只有中文"}]}', `{"questions":[{"en":"${'x'.repeat(201)}"}]}`]) assert.throws(() => parseQuestions(bad, ORIGINAL_KEYS), /不是预期的格式/, bad);
 });
 
-function harness(t) {
+test('questions for another pair are read by the keys "native" and "target"', () => {
+  assert.deepEqual(parseQuestions(JSON.stringify({ questions: japaneseSuggested }), GENERAL_KEYS), japaneseSuggested);
+  assert.deepEqual(parseQuestions('{"questions":[{"target":" どう  でしたか？ "}]}', GENERAL_KEYS), [{ target: 'どう でしたか？', native: '' }]);
+  assert.throws(() => parseQuestions(JSON.stringify({ questions: suggestedReply }), GENERAL_KEYS), /不是预期的格式/, 'questions under "en" are not read');
+  assert.throws(() => parseQuestions(JSON.stringify({ questions: japaneseSuggested }), ORIGINAL_KEYS), /不是预期的格式/, 'nor the other way round');
+});
+
+test('the question prompt for zh-CN → en-US is the approved wording', () => {
+  const prompt = questionSystemPrompt('zh-CN', 'en-US');
+  assert.match(prompt, /^The learner has memorized a short English passage that says something they want to say in real life\. Write 3 different questions/);
+  assert.match(prompt, /- Each question is one short spoken sentence, at most 12 words, in everyday English\./);
+  assert.match(prompt, /- Add a Chinese translation of each question\./);
+  assert.match(prompt, /- Reply with JSON only: \{"questions":\[\{"en":"…","zh":"…"\}\]\}$/);
+  assert.equal(sha16(prompt), '303e8369e3c16a6e');
+});
+
+test('the question prompt for another pair names its languages, counts in their unit, and asks for "target" and "native"', () => {
+  const cases = [
+    ['zh-CN', 'ja-JP', /^The learner has memorized a short Japanese passage/, /at most 24 characters, in everyday Japanese\./, /a Chinese translation of each question\./],
+    ['zh-CN', 'en-GB', /^The learner has memorized a short English passage/, /at most 12 words, in everyday British English\./, /a Chinese translation of each question\./],
+    ['ja-JP', 'en-US', /^The learner has memorized a short English passage/, /at most 12 words, in everyday American English\./, /a Japanese translation of each question\./],
+    ['ja-JP', 'zh-HK', /^The learner has memorized a short Cantonese passage/, /at most 24 characters, in everyday Hong Kong Cantonese, written in traditional characters\./, /a Japanese translation of each question\./],
+  ];
+  for (const [nativeLanguage, targetLanguage, opening, limit, translation] of cases) {
+    const prompt = questionSystemPrompt(nativeLanguage, targetLanguage);
+    const pair = `${nativeLanguage} → ${targetLanguage}`;
+    for (const expected of [opening, limit, translation, /- Reply with JSON only: \{"questions":\[\{"target":"…","native":"…"\}\]\}$/]) assert.match(prompt, expected, pair);
+    assert.doesNotMatch(prompt, /"zh"|"en"/, pair);
+  }
+});
+
+test('the question prompt reads as English when the learner\'s own language starts with a vowel', () => {
+  for (const [nativeLanguage, name] of [['en-US', 'English'], ['it-IT', 'Italian'], ['ar-EG', 'Arabic']]) {
+    assert.match(questionSystemPrompt(nativeLanguage, 'ja-JP'), new RegExp(`- Add an ${name} translation of each question\\.`), nativeLanguage);
+  }
+});
+
+test('the user message labels the passage and its source with their languages', () => {
+  assert.equal(questionUserPrompt({ register: 'formal', passage: 'やり遂げました。', source: 'I pulled it off.', nativeLanguage: 'en-US', targetLanguage: 'ja-JP' }),
+    'Register: formal\n\nPassage (Japanese):\nやり遂げました。\n\nPassage (English):\nI pulled it off.');
+});
+
+function harness(t, { questions = suggestedReply } = {}) {
   const dataDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'speak-english-exercises-'));
   t.after(() => fs.rmSync(dataDirectory, { recursive: true, force: true }));
   const handlers = new Map();
@@ -31,18 +82,30 @@ function harness(t) {
     dataDirectory, signal: new AbortController().signal, handle: (name, handler) => handlers.set(name, handler),
     inference: {
       catalog: async () => ({ models: [model], slots: { cheap: { model } } }),
-      complete: async request => { asked.push(request); return { stopReason: 'stop', content: [{ type: 'text', text: JSON.stringify({ questions: suggested }) }] }; },
+      complete: async request => { asked.push(request); return { stopReason: 'stop', content: [{ type: 'text', text: JSON.stringify({ questions }) }] }; },
     },
   };
-  const fetchImpl = async (url, init) => { synthesized.push({ url, text: JSON.parse(init.body).text }); return new Response(fixtureBytes('elevenlabs', 'success.mp3')); };
+  const fetchImpl = async (url, init) => {
+    const body = JSON.parse(init.body);
+    synthesized.push({ url, text: body.text, languageCode: body.language_code });
+    return new Response(fixtureBytes('elevenlabs', 'success.mp3'));
+  };
   createBackend(ctx, { fetchImpl });
   return { dataDirectory, asked, synthesized, call: (name, input) => handlers.get(name)(input) };
 }
 
-async function passageReady(backend) {
+const ORIGINAL_PASSAGE = {
+  register: 'casual', version: 'brief', nativeLanguage: 'zh-CN', targetLanguage: 'en-US', source: '这事挺难，但我做成了。我明天告诉他。',
+  sentences: [{ native: '这事挺难，但我做成了。', target: "I can't believe I pulled it off.", keyExpression: 'pulled it off' }, { native: '我明天告诉他。', target: "I'll tell him tomorrow.", keyExpression: '' }],
+};
+const JAPANESE_PASSAGE = {
+  register: 'formal', version: 'sentences', nativeLanguage: 'en-US', targetLanguage: 'ja-JP', source: "It was hard, but I pulled it off. I'll tell him tomorrow.",
+  sentences: [{ native: 'It was hard, but I pulled it off.', target: '大変でしたが、やり遂げました。', keyExpression: 'やり遂げました' }, { native: "I'll tell him tomorrow.", target: '明日、彼に伝えます。', keyExpression: '' }],
+};
+
+async function passageReady(backend, passage = ORIGINAL_PASSAGE) {
   await backend.call('set-secret', { name: 'elevenLabsKey', value: 'el-key' });
-  const sentences = [{ zh: '这事挺难，但我做成了。', en: "I can't believe I pulled it off.", keyExpression: 'pulled it off' }, { zh: '我明天告诉他。', en: "I'll tell him tomorrow.", keyExpression: '' }];
-  const { passageId, state } = await backend.call('create-passage', { register: 'casual', version: 'brief', chinese: '这事挺难，但我做成了。我明天告诉他。', sentences });
+  const { passageId, state } = await backend.call('create-passage', passage);
   assert.deepEqual(state.passages[0].questions, []);
   return { passageId, sentenceIds: state.passages[0].sentences.map(sentence => sentence.id) };
 }
@@ -52,28 +115,50 @@ test('questions: suggested by the model, saved only when confirmed, spoken in th
   const { passageId } = await passageReady(backend);
   const { questions } = await backend.call('suggest-questions', { passageId });
   assert.deepEqual(questions, suggested);
-  assert.equal(backend.asked[0].context.systemPrompt, QUESTION_SYSTEM_PROMPT);
+  assert.equal(backend.asked[0].context.systemPrompt, questionSystemPrompt('zh-CN', 'en-US'));
   assert.equal(backend.asked[0].context.messages[0].content, "Register: casual\n\nPassage (English):\nI can't believe I pulled it off. I'll tell him tomorrow.\n\nPassage (Chinese):\n这事挺难，但我做成了。我明天告诉他。");
   assert.deepEqual((await backend.call('get-state')).passages[0].questions, [], 'suggesting stores nothing');
 
-  const edited = [{ en: '  How did it go? ', zh: '怎么样了？' }, suggested[1]];
+  const edited = [{ target: '  How did it go? ', native: '怎么样了？' }, suggested[1]];
   const { questionIds, state } = await backend.call('add-questions', { passageId, questions: edited });
-  assert.deepEqual(state.passages[0].questions.map(question => [question.id, question.en, question.zh, question.audio]), [[questionIds[0], 'How did it go?', '怎么样了？', null], [questionIds[1], suggested[1].en, suggested[1].zh, null]]);
+  assert.deepEqual(state.passages[0].questions.map(question => [question.id, question.target, question.native, question.audio]), [[questionIds[0], 'How did it go?', '怎么样了？', null], [questionIds[1], suggested[1].target, suggested[1].native, null]]);
   await assert.rejects(backend.call('question-audio', { passageId, questionId: questionIds[0] }), /还没有合成语音/);
 
   const spoken = await backend.call('synthesize-question', { passageId, questionId: questionIds[0] });
   assert.equal(spoken.passages[0].questions[0].audio.voiceId, 'cjVigY5qzO86Huf0OWal');
-  assert.deepEqual([backend.synthesized.length, backend.synthesized[0].text], [1, 'How did it go?']);
+  assert.deepEqual(backend.synthesized, [{ url: backend.synthesized[0].url, text: 'How did it go?', languageCode: 'en' }]);
   assert.match(backend.synthesized[0].url, /cjVigY5qzO86Huf0OWal/);
   assert.equal((await backend.call('question-audio', { passageId, questionId: questionIds[0] })).mime, 'audio/mpeg');
   await backend.call('synthesize-question', { passageId, questionId: questionIds[0] });
   assert.equal(backend.synthesized.length, 1, 'existing audio is not synthesized again');
 });
 
+test('questions for a passage of another pair: asked for, read and spoken in that pair\'s languages', async t => {
+  const backend = harness(t, { questions: japaneseSuggested });
+  const { passageId } = await passageReady(backend, JAPANESE_PASSAGE);
+  const { questions } = await backend.call('suggest-questions', { passageId });
+  assert.deepEqual(questions, japaneseSuggested);
+  assert.equal(backend.asked[0].context.systemPrompt, questionSystemPrompt('en-US', 'ja-JP'));
+  assert.equal(backend.asked[0].context.messages[0].content, "Register: formal\n\nPassage (Japanese):\n大変でしたが、やり遂げました。明日、彼に伝えます。\n\nPassage (English):\nIt was hard, but I pulled it off. I'll tell him tomorrow.");
+
+  const { questionIds, state } = await backend.call('add-questions', { passageId, questions });
+  assert.deepEqual(state.passages[0].questions.map(question => [question.target, question.native]), japaneseSuggested.map(question => [question.target, question.native]));
+  await backend.call('synthesize-question', { passageId, questionId: questionIds[0] });
+  assert.deepEqual([backend.synthesized[0].text, backend.synthesized[0].languageCode], ['プロジェクトはどうでしたか？', 'ja']);
+});
+
+test('a passage keeps asking in its own pair after the settings move to another one', async t => {
+  const backend = harness(t);
+  const { passageId } = await passageReady(backend);
+  await backend.call('save-settings', { nativeLanguage: 'en-US', targetLanguage: 'ja-JP' });
+  assert.deepEqual((await backend.call('suggest-questions', { passageId })).questions, suggested);
+  assert.equal(backend.asked[0].context.systemPrompt, questionSystemPrompt('zh-CN', 'en-US'));
+});
+
 test('questions are checked, capped at six per passage, and deleted with their audio', async t => {
   const backend = harness(t);
   const { passageId } = await passageReady(backend);
-  const refused = [[[], /没有要保存的问句/], [[{ en: ' ' }], /问句不能为空/], [[{ en: 'x'.repeat(201) }], /问句不能为空/], ['text', /没有要保存的问句/]];
+  const refused = [[[], /没有要保存的问句/], [[{ target: ' ' }], /问句不能为空/], [[{ target: 'x'.repeat(201) }], /问句不能为空/], [[{ en: 'How did it go?', zh: '怎么样了？' }], /问句不能为空/], ['text', /没有要保存的问句/]];
   for (const [questions, expected] of refused) await assert.rejects(backend.call('add-questions', { passageId, questions }), expected);
   await assert.rejects(backend.call('add-questions', { passageId: 'missing', questions: suggested }), /找不到这一段/);
   const first = await backend.call('add-questions', { passageId, questions: suggested });

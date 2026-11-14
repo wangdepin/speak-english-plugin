@@ -16,6 +16,9 @@ const { assessPronunciation } = require('./speech/assess.cjs');
 const { userFacingError } = require('./speech-messages.cjs');
 const { suggestQuestions, requireQuestion, addQuestions, removeQuestion, attachQuestionAudio } = require('./questions.cjs');
 const { recordListen, recordResponse } = require('./exercises.cjs');
+const { LANGUAGES, DEFAULT_TARGET } = require('./languages.cjs');
+const { startDiagnosis, recordDiagnosis, recordLesson, recordConsolidation } = require('./study.cjs');
+const { registerLesson } = require('./lesson.cjs');
 const { t, setLanguage } = require('./messages.cjs');
 
 // 30 seconds of 16 kHz mono 16-bit WAV is about 1.28 million base64 characters.
@@ -39,13 +42,16 @@ function createBackend(ctx, services = {}) {
   const secrets = openSecrets(ctx.dataDirectory);
   const audioFiles = openAudioFiles(ctx.dataDirectory);
   const { fetchImpl } = services;
-  const view = () => clientView(store.get(), secrets.status(), Date.now());
+  const lessonAvailable = registerLesson(ctx, store);
+  const view = () => ({ lessonAvailable, ...clientView(store.get(), secrets.status(), Date.now()) });
+  /** The code the synthesis service uses for the language a passage is practised in. */
+  const speechLanguage = passageId => LANGUAGES[requirePassage(store.get(), passageId).targetLanguage].tts;
 
   async function synthesizeSentence({ sentenceId, force }) {
     const { settings } = store.get();
     const sentence = requireSentence(store.get(), sentenceId);
     if (sentence.audio && !force) return view();
-    const audio = await synthesizeSpeech({ text: sentence.en, voiceId: settings.ttsVoiceId, modelId: settings.ttsModel, key: secrets.get('elevenLabsKey'), fetchImpl, signal: ctx.signal });
+    const audio = await synthesizeSpeech({ text: sentence.target, voiceId: settings.ttsVoiceId, modelId: settings.ttsModel, languageCode: speechLanguage(sentence.passageId), key: secrets.get('elevenLabsKey'), fetchImpl, signal: ctx.signal });
     audioFiles.write(sentenceId, audio.bytes);
     store.change(state => attachAudio(state, sentenceId, { seconds: audio.seconds, modelId: settings.ttsModel, voiceId: settings.ttsVoiceId, now: Date.now() }));
     return view();
@@ -69,7 +75,7 @@ function createBackend(ctx, services = {}) {
     const { settings } = store.get();
     const question = requireQuestion(store.get(), passageId, questionId);
     if (question.audio && !force) return view();
-    const audio = await synthesizeSpeech({ text: question.en, voiceId: settings.questionVoiceId, modelId: settings.ttsModel, key: secrets.get('elevenLabsKey'), fetchImpl, signal: ctx.signal });
+    const audio = await synthesizeSpeech({ text: question.target, voiceId: settings.questionVoiceId, modelId: settings.ttsModel, languageCode: speechLanguage(passageId), key: secrets.get('elevenLabsKey'), fetchImpl, signal: ctx.signal });
     audioFiles.write(questionId, audio.bytes);
     store.change(state => attachQuestionAudio(state, passageId, questionId, { seconds: audio.seconds, modelId: settings.ttsModel, voiceId: settings.questionVoiceId, now: Date.now() }));
     return view();
@@ -87,18 +93,34 @@ function createBackend(ctx, services = {}) {
     return view();
   }
 
-  function assess({ wavBase64, referenceText }) {
+  /** Scores a recording against `referenceText`, which is in the language `locale` names. */
+  function assessIn(locale, { wavBase64, referenceText }) {
     const region = store.get().settings.azureRegion;
     if (region === '') throw new Error(t('还没有填 Azure 区域，请到插件设置里填写。'));
-    return assessPronunciation({ wav: decodeWav(wavBase64), referenceText, key: secrets.get('azureKey'), region, fetchImpl, signal: ctx.signal });
+    return assessPronunciation({ wav: decodeWav(wavBase64), referenceText, locale, key: secrets.get('azureKey'), region, fetchImpl, signal: ctx.signal });
   }
 
   /** Scores a recording of one sentence and keeps the result in the practice log. */
   async function scoreAttempt({ attemptId, sentenceId, kind, wavBase64 }) {
     const sentence = requireSentence(store.get(), sentenceId);
-    const assessment = await assess({ wavBase64, referenceText: sentence.en });
+    const { targetLanguage } = requirePassage(store.get(), sentence.passageId);
+    const assessment = await assessIn(targetLanguage, { wavBase64, referenceText: sentence.target });
     store.change(state => recordScores(state, { attemptId, sentenceId, kind, assessment, now: Date.now() }));
     return { assessment, state: view() };
+  }
+
+  /** Scores a repetition from the listening diagnostic. Nothing is logged: the diagnostic keeps its own result. */
+  async function scoreRetell({ sentenceId, wavBase64 }) {
+    const sentence = requireSentence(store.get(), sentenceId);
+    const { targetLanguage } = requirePassage(store.get(), sentence.passageId);
+    return { assessment: await assessIn(targetLanguage, { wavBase64, referenceText: sentence.target }) };
+  }
+
+  /** Remembers the lesson the frontend has just started for a passage, so that the lesson's agents get the passage. */
+  function startLesson({ passageId, chatId }) {
+    if (!lessonAvailable) throw new Error(t('这个版本的 LearnHarness 不能把段落交给老师，请更新应用。'));
+    store.change(state => recordLesson(state, { passageId, chatId, now: Date.now() }));
+    return view();
   }
 
   /** Asks the model to explain a sentence the learner cannot say, and keeps the answer with the sentence. */
@@ -140,7 +162,7 @@ function createBackend(ctx, services = {}) {
     'save-settings': patch => { store.change(state => { state.settings = applySettingsPatch(state.settings, patch); }); return view(); },
     'set-secret': ({ name, value }) => { secrets.set(name, value); return view(); },
     'clear-secret': ({ name }) => { secrets.clear(name); return view(); },
-    translate: ({ register, chinese }) => translatePassage({ inference: ctx.inference, settings: store.get().settings, register, chinese, signal: ctx.signal }),
+    translate: ({ register, text }) => translatePassage({ inference: ctx.inference, settings: store.get().settings, register, text, signal: ctx.signal }),
     'create-passage': input => {
       const confirmed = checkConfirmedPassage(input);
       const passageId = store.change(state => addPassage(state, confirmed, { now: Date.now(), newId: randomUUID }));
@@ -149,7 +171,8 @@ function createBackend(ctx, services = {}) {
     'synthesize-sentence': synthesizeSentence,
     'sentence-audio': sentenceAudio,
     'delete-passage': deletePassage,
-    assess,
+    // The settings page's microphone test: its sentence is always English.
+    assess: input => assessIn(DEFAULT_TARGET, input),
     'score-attempt': scoreAttempt,
     'judge-recall': input => { store.change(state => judgeRecall(state, { ...input, now: Date.now() })); return view(); },
     'judge-review': input => { store.change(state => judgeReview(state, { ...input, now: Date.now() })); return view(); },
@@ -166,6 +189,11 @@ function createBackend(ctx, services = {}) {
     'question-audio': questionAudio,
     'record-listen': input => { store.change(state => recordListen(state, { ...input, now: Date.now() })); return view(); },
     'record-response': input => { store.change(state => recordResponse(state, { ...input, now: Date.now() })); return view(); },
+    'start-diagnosis': ({ passageId }) => { store.change(state => startDiagnosis(state, { passageId, now: Date.now() })); return view(); },
+    'score-retell': scoreRetell,
+    'record-diagnosis': input => { store.change(state => recordDiagnosis(state, { ...input, now: Date.now() })); return view(); },
+    'start-lesson': startLesson,
+    'record-consolidation': ({ passageId, kind }) => { store.change(state => recordConsolidation(state, { passageId, kind, now: Date.now() })); return view(); },
     'save-reading': saveReading,
     'reading-audio': readingAudio,
   };

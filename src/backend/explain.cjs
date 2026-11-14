@@ -1,10 +1,12 @@
 'use strict';
 
-const { EXPLAIN_SYSTEM_PROMPT, explainUserPrompt } = require('./explain-prompts.cjs');
+const { explainSystemPrompt, explainUserPrompt } = require('./explain-prompts.cjs');
 const { parseExplanation } = require('./explain-parse.cjs');
 const { resolveModel } = require('./translate.cjs');
 const { replyText, keyWithin } = require('./model-reply.cjs');
 const { requireSentence, requirePassage } = require('./records.cjs');
+const { replyKeys } = require('./languages.cjs');
+const { forgetDiagnosisOf } = require('./study.cjs');
 const { t } = require('./messages.cjs');
 
 // Generous on purpose: some models count their reasoning as output, and a cut-off reply is unusable.
@@ -48,15 +50,16 @@ function practiceHistory(state, sentenceId) {
 /** Asks the model why a sentence is hard to say and what to say instead. Resolves to the parsed explanation. */
 async function requestExplanation({ inference, state, sentenceId, signal }) {
   const sentence = requireSentence(state, sentenceId);
+  const { nativeLanguage, targetLanguage } = requirePassage(state, sentence.passageId);
   const model = await resolveModel(inference, state.settings);
   const message = await inference.complete({
     model,
     purpose: 'user',
-    context: { systemPrompt: EXPLAIN_SYSTEM_PROMPT, messages: [{ role: 'user', content: explainUserPrompt(sentence, practiceHistory(state, sentenceId)), timestamp: Date.now() }] },
+    context: { systemPrompt: explainSystemPrompt(nativeLanguage, targetLanguage), messages: [{ role: 'user', content: explainUserPrompt(sentence, practiceHistory(state, sentenceId), nativeLanguage, targetLanguage), timestamp: Date.now() }] },
     options: { maxTokens: REPLY_MAX_TOKENS },
     signal,
   });
-  return parseExplanation(replyText(message, t('讲解')), sentence.en);
+  return parseExplanation(replyText(message, t('讲解')), sentence.target, { targetLanguage, keys: replyKeys(nativeLanguage, targetLanguage) });
 }
 
 /** Keeps the explanation with its sentence, and starts counting misses afresh. */
@@ -81,17 +84,18 @@ function adoptExplanation(state, sentenceId, choice, { newId }) {
   const sentence = requireSentence(state, sentenceId);
   if (!ADOPTIONS.includes(choice)) throw new Error(t('只能采用替代说法或拆分方案。'));
   if (!sentence.explanation) throw new Error(t('这一句还没有讲解。'));
-  const parts = choice === 'simpler' ? [{ zh: sentence.zh, en: sentence.explanation.simpler.en }] : sentence.explanation.split;
+  const parts = choice === 'simpler' ? [{ native: sentence.native, target: sentence.explanation.simpler.target }] : sentence.explanation.split;
   if (!parts) throw new Error(t('这一句的讲解里没有拆分方案。'));
   const passage = requirePassage(state, sentence.passageId);
   const replacements = parts.map(part => ({
-    id: newId(), passageId: passage.id, zh: part.zh, en: part.en, keyExpression: keyWithin(part.en, sentence.keyExpression),
+    id: newId(), passageId: passage.id, native: part.native, target: part.target, keyExpression: keyWithin(part.target, sentence.keyExpression),
     audio: null, schedule: null, explanation: null, explainCheckedAt: null,
   }));
   for (const replacement of replacements) state.sentences[replacement.id] = replacement;
   passage.sentenceIds.splice(passage.sentenceIds.indexOf(sentenceId), 1, ...replacements.map(replacement => replacement.id));
   delete state.sentences[sentenceId];
   state.attempts = state.attempts.filter(attempt => attempt.sentenceId !== sentenceId);
+  forgetDiagnosisOf(passage, sentenceId);
   return { removedSentenceId: sentenceId, sentenceIds: replacements.map(replacement => replacement.id) };
 }
 

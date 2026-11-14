@@ -32,12 +32,12 @@ async function readAssessment(response) {
 }
 
 /**
- * Scores one recording against the sentence the speaker meant to say.
+ * Scores one recording against the sentence the speaker meant to say, in the language `locale` names.
  * `wav` is 16 kHz mono 16-bit PCM WAV bytes, at most 30 seconds.
  * Resolves to { recognizedText, scores, words }; rejects with a SpeechError.
  */
-async function assessPronunciation({ wav, referenceText, key, region, fetchImpl, signal, timeoutMs }) {
-  const { url, init } = buildAssessmentRequest({ key, region, referenceText, wav });
+async function assessPronunciation({ wav, referenceText, locale, key, region, fetchImpl, signal, timeoutMs }) {
+  const { url, init } = buildAssessmentRequest({ key, region, locale, referenceText, wav });
   const problem = assessableWavProblem(wav);
   if (problem) throw new SpeechError(SERVICE, 'bad-audio', `the recording cannot be scored: ${problem}`);
   return callService(SERVICE, url, init, readAssessment, { fetchImpl, signal, timeoutMs });

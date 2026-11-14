@@ -1,5 +1,5 @@
 import { el, errorLine, lifetime } from './dom.js';
-import { REGISTER_LABELS } from './labels.js';
+import { cueHeading } from './labels.js';
 import { findSentence, shouldSuggestExplanation } from './lookup.js';
 import { createBlobPlayer, createSentencePlayer } from './sentence-player.js';
 import { createTakeRecorder } from './take-recorder.js';
@@ -16,7 +16,7 @@ const clock = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 
 
 /**
  * Spaced review. One card at a time, always the most urgent one the backend
- * reports: see the Chinese, start speaking before the start limit runs out,
+ * reports: see the meaning in your own language, start speaking before the start limit runs out,
  * then judge yourself against the answer. Running out of time before starting
  * counts as not said. A missed card comes back after 10 minutes.
  */
@@ -137,13 +137,13 @@ export function reviewScreen(app, root, signal) {
     if (!found) { showDone(); return; }
     const { sentence, passage } = found;
     const scope = newStep();
-    const startLimit = startLimitMs(sentence, app.state.settings);
+    const startLimit = startLimitMs(sentence, passage, app.state.settings);
     const countdown = el('span', 'se-countdown', t('剩余 {seconds} 秒', { seconds: secondsLeft(startLimit, 0) }));
     const prompt = el('p', 'se-status', t('按空格开始说。'));
     const actions = el('div', 'se-actions');
-    card = { sentence, attemptId: crypto.randomUUID(), side: 'front', shownAt: performance.now(), responseMs: null, speakMs: null, taken: null, timedOut: false, judged: false, prompt, actions };
+    card = { sentence, language: passage.targetLanguage, attemptId: crypto.randomUUID(), side: 'front', shownAt: performance.now(), responseMs: null, speakMs: null, taken: null, timedOut: false, judged: false, prompt, actions };
     const current = card;
-    body.replaceChildren(el('p', 'se-muted', t('场景：{register}', { register: t(REGISTER_LABELS[passage.register]) })), el('p', 'se-cue', sentence.zh), countdown, prompt, actions);
+    body.replaceChildren(el('p', 'se-muted', cueHeading(passage)), el('p', 'se-cue', sentence.native), countdown, prompt, actions);
     ticker = setInterval(() => {
       if (scope.aborted || card !== current || current.responseMs !== null) return;
       const elapsed = performance.now() - current.shownAt;
@@ -213,7 +213,7 @@ export function reviewScreen(app, root, signal) {
     const actions = el('div', 'se-actions');
     body.replaceChildren(
       el('p', '', t('现在有 {count} 句到期。', { count: review.dueIds.length })),
-      el('p', 'se-muted', t('每张卡只显示中文。在倒计时结束前按空格开始说，说完再按一次空格；来不及开口就记为没说出来。')),
+      el('p', 'se-muted', t('每张卡只显示母语的意思。在倒计时结束前按空格开始说，说完再按一次空格；来不及开口就记为没说出来。')),
       actions,
     );
     app.ui.button(actions, t('开始复习'), next, scope, { variant: 'default', key: 'next' });

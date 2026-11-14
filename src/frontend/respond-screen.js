@@ -1,5 +1,5 @@
 import { el, errorLine, lifetime } from './dom.js';
-import { appendEnglish, REGISTER_LABELS } from './labels.js';
+import { appendWithKey, REGISTER_LABELS } from './labels.js';
 import { respondablePassages, sample } from './exercise-picks.js';
 import { createBlobPlayer, createPlayer, createSentencePlayer, playOrStop, playSentences } from './sentence-player.js';
 import { createTakeRecorder } from './take-recorder.js';
@@ -90,12 +90,12 @@ export function respondScreen(app, root, signal) {
     const listen = el('div', 'se-actions');
     const text = el('div', 'se-reading-text');
     for (const sentence of passage.sentences) {
-      const line = el('p', 'se-english');
-      appendEnglish(line, sentence.en, sentence.keyExpression);
+      const line = el('p', 'se-target');
+      appendWithKey(line, sentence.target, sentence.keyExpression);
       text.append(line);
     }
     const verdict = el('div', 'se-actions se-verdict');
-    body.replaceChildren(el('p', 'se-muted', t('问句')), el('p', 'se-english se-english-large', question.en), el('p', 'se-chinese', question.zh), el('p', 'se-muted', t('你背过的回答')), text, listen, verdict);
+    body.replaceChildren(el('p', 'se-muted', t('问句')), el('p', 'se-target se-target-large', question.target), el('p', 'se-native', question.native), el('p', 'se-muted', t('你背过的回答')), text, listen, verdict);
     const playQuestion = () => questions.play(current.key).catch(error.show);
     app.ui.button(listen, t('▶ 问句'), playQuestion, scope);
     app.keys.bind('reference', { run: playOrStop(questions, playQuestion), label: t('问句') }, scope);

@@ -1,20 +1,11 @@
 import { el, errorLine } from './dom.js';
-import { appendEnglish } from './labels.js';
+import { appendWithKey } from './labels.js';
 import { blobToWav } from './recorder.js';
 import { createBlobPlayer, createSentencePlayer, playOrStop, slowToggle } from './sentence-player.js';
-import { createTakeRecorder } from './take-recorder.js';
+import { createTakeRecorder, takeLimitMs } from './take-recorder.js';
 import { renderAssessment } from './assessment-view.js';
 import { toBase64 } from './wav.js';
 import { t } from './i18n.js';
-
-const MIN_TAKE_MS = 8000;
-const MAX_TAKE_MS = 30000;
-
-/** Time allowed for one take: three times the reference audio, within what the scoring service accepts. */
-function takeLimitMs(sentence) {
-  const reference = sentence.audio ? sentence.audio.seconds * 3000 : MIN_TAKE_MS;
-  return Math.min(MAX_TAKE_MS, Math.max(MIN_TAKE_MS, reference));
-}
 
 function averageText(average) {
   return average ? t('最近 {count} 句平均 {score}', { count: average.count, score: average.overall }) : '';
@@ -37,13 +28,13 @@ export function shadowScreen(app, root, signal, { passageId }) {
   const average = el('span', 'se-muted', averageText(app.state.shadowAverage));
   header.append(position, average);
   const card = el('div', 'se-card');
-  const chinese = el('p', 'se-chinese');
-  const english = el('p', 'se-english se-english-large');
+  const meaning = el('p', 'se-native');
+  const spoken = el('p', 'se-target se-target-large');
   const listen = el('div', 'se-actions');
   const status = el('p', 'se-status');
   const result = el('div', 'se-result');
   const after = el('div', 'se-actions');
-  card.append(chinese, english, listen, status, result);
+  card.append(meaning, spoken, listen, status, result);
   root.append(header, card);
   const error = errorLine(root);
   root.append(after, el('p', 'se-muted', t('按空格开始录音，说完再按一次空格。')));
@@ -69,7 +60,7 @@ export function shadowScreen(app, root, signal, { passageId }) {
       average.textContent = averageText(app.state.shadowAverage);
       if (mine !== turn) return;
       status.textContent = '';
-      renderAssessment(result, sentence.en, assessment);
+      renderAssessment(result, sentence.target, assessment, passage.targetLanguage);
     } catch (cause) {
       if (signal.aborted || mine !== turn) return;
       status.textContent = '';
@@ -102,9 +93,9 @@ export function shadowScreen(app, root, signal, { passageId }) {
     take = null;
     const sentence = sentences[index];
     position.textContent = t('分段跟读 · 第 {position}/{total} 句', { position: index + 1, total: sentences.length });
-    chinese.textContent = sentence.zh;
-    english.replaceChildren();
-    appendEnglish(english, sentence.en, sentence.keyExpression);
+    meaning.textContent = sentence.native;
+    spoken.replaceChildren();
+    appendWithKey(spoken, sentence.target, sentence.keyExpression);
     status.textContent = sentence.audio ? '' : t('这一句还没有语音，可以先回段落页合成。');
     result.replaceChildren();
     error.clear();

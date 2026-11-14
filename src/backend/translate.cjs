@@ -3,13 +3,14 @@
 const { translationSystemPrompt, translationUserPrompt } = require('./translate-prompts.cjs');
 const { parseTranslation } = require('./translate-parse.cjs');
 const { replyText } = require('./model-reply.cjs');
+const { requirePair, replyKeys } = require('./languages.cjs');
 const { t } = require('./messages.cjs');
 
 const PASSAGE_MAX_CHARS = 2000;
 const REPLY_MAX_TOKENS = 4000;
 
-function requirePassage(chinese) {
-  const text = typeof chinese === 'string' ? chinese.trim() : '';
+function requirePassage(source) {
+  const text = typeof source === 'string' ? source.trim() : '';
   if (text === '') throw new Error(t('请先写下想说的话。'));
   if (text.length > PASSAGE_MAX_CHARS) throw new Error(t('这段话超过 {max} 字了，请分成几段录入。', { max: PASSAGE_MAX_CHARS }));
   return text;
@@ -26,21 +27,25 @@ async function resolveModel(inference, settings) {
 }
 
 /**
- * Turns a Chinese passage into sentence-aligned English for one register.
- * Resolves to { versions: [{ id, sentences: [{ zh, en, keyExpression }] }] }.
+ * Turns a passage in the learner's own language into sentence-aligned text in the language they practise,
+ * for one register. The two languages are the ones in the settings; the result names them, so the passage
+ * can be saved under the pair it was translated for:
+ * { nativeLanguage, targetLanguage, versions: [{ id, sentences: [{ native, target, keyExpression }] }] }.
  */
-async function translatePassage({ inference, settings, register, chinese, signal }) {
-  const systemPrompt = translationSystemPrompt(register);
-  const passage = requirePassage(chinese);
+async function translatePassage({ inference, settings, register, text, signal }) {
+  const { nativeLanguage, targetLanguage } = requirePair(settings.nativeLanguage, settings.targetLanguage);
+  const systemPrompt = translationSystemPrompt(register, nativeLanguage, targetLanguage);
+  const passage = requirePassage(text);
   const model = await resolveModel(inference, settings);
   const message = await inference.complete({
     model,
     purpose: 'user',
-    context: { systemPrompt, messages: [{ role: 'user', content: translationUserPrompt(passage), timestamp: Date.now() }] },
+    context: { systemPrompt, messages: [{ role: 'user', content: translationUserPrompt(passage, nativeLanguage), timestamp: Date.now() }] },
     options: { maxTokens: REPLY_MAX_TOKENS },
     signal,
   });
-  return parseTranslation(replyText(message, t('翻译')), register);
+  const { versions } = parseTranslation(replyText(message, t('翻译')), register, replyKeys(nativeLanguage, targetLanguage));
+  return { nativeLanguage, targetLanguage, versions };
 }
 
 module.exports = { translatePassage, resolveModel, PASSAGE_MAX_CHARS };

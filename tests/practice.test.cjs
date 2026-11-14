@@ -17,7 +17,7 @@ const at = text => new Date(text).getTime();
 const assessmentFrom = name => parseAssessment(fixtureJson('azure', `${name}.json`).body);
 
 function stateWithSentence() {
-  return { settings: defaultSettings(), passages: {}, attempts: [], sentences: { [SENTENCE]: { id: SENTENCE, en: 'I will tell him about it.', schedule: null } } };
+  return { settings: defaultSettings(), passages: {}, attempts: [], sentences: { [SENTENCE]: { id: SENTENCE, target: 'I will tell him about it.', schedule: null } } };
 }
 
 test('problemWords keeps flagged words and words with a weak phoneme, nothing else', () => {
@@ -27,6 +27,12 @@ test('problemWords keeps flagged words and words with a weak phoneme, nothing el
     weakPhonemes: [{ expected: 't', accuracy: 0, soundsLike: 's' }, { expected: 'ɛ', accuracy: 8, soundsLike: null }],
   }]);
   assert.deepEqual(problemWords(assessmentFrom('omission')).map(word => [word.word, word.errorType]), [['all', 'Omission'], ['tomorrow', 'Omission']]);
+});
+
+test('problemWords in a language whose sounds are not named: flagged words only, without sounds', () => {
+  assert.deepEqual(problemWords(assessmentFrom('german')), [{ word: 'ist', errorType: 'Mispronunciation', accuracy: 59, weakPhonemes: [] }]);
+  assert.deepEqual(problemWords(assessmentFrom('japanese')), []);
+  assert.deepEqual(problemWords(assessmentFrom('mandarin')), []);
 });
 
 test('scores and the verdict of one attempt may arrive in either order', () => {
@@ -117,11 +123,19 @@ function harness(t) {
   return { dataDirectory, call: (name, input) => handlers.get(name)(input), hear: name => { azureFixture = name; } };
 }
 
-async function passageReady(backend) {
+const ORIGINAL_PASSAGE = {
+  register: 'casual', version: 'brief', nativeLanguage: 'zh-CN', targetLanguage: 'en-US', source: '我会把这事告诉他。我搞定了。',
+  sentences: [{ native: '我会把这事告诉他。', target: 'I will tell him about it.', keyExpression: 'tell him about it' }, { native: '我搞定了。', target: 'Nailed it.', keyExpression: '' }],
+};
+const GERMAN_PASSAGE = {
+  register: 'casual', version: 'brief', nativeLanguage: 'en-US', targetLanguage: 'de-DE', source: "The weather is nice today, let's go for a walk in the park.",
+  sentences: [{ native: "The weather is nice today, let's go for a walk in the park.", target: fixtureJson('azure', 'german.json').referenceText, keyExpression: 'spazieren gehen' }],
+};
+
+async function passageReady(backend, passage = ORIGINAL_PASSAGE) {
   await backend.call('set-secret', { name: 'azureKey', value: 'az-key' });
   await backend.call('save-settings', { azureRegion: 'swedencentral' });
-  const sentences = [{ zh: '我会把这事告诉他。', en: 'I will tell him about it.', keyExpression: 'tell him about it' }, { zh: '我搞定了。', en: 'Nailed it.', keyExpression: '' }];
-  const { passageId, state } = await backend.call('create-passage', { register: 'casual', version: 'brief', chinese: '我会把这事告诉他。我搞定了。', sentences });
+  const { passageId, state } = await backend.call('create-passage', passage);
   return { passageId, sentenceIds: state.passages[0].sentences.map(sentence => sentence.id) };
 }
 
@@ -140,6 +154,17 @@ test('shadowing: each scored attempt is logged and moves the recent average', as
   assert.equal(second.state.passages[0].sentences[0].recall, 'pending', 'shadowing does not schedule');
   const stored = JSON.parse(fs.readFileSync(path.join(backend.dataDirectory, 'store.json'), 'utf8')).attempts;
   assert.deepEqual(stored.map(attempt => [attempt.kind, attempt.scores.overall, attempt.problems.length]), [['shadow', 89.3, 1], ['shadow', 96, 0]]);
+});
+
+test('shadowing in a language without named sounds: the flagged word is logged, the score counts, prosody is absent', async t => {
+  const backend = harness(t);
+  const { sentenceIds } = await passageReady(backend, GERMAN_PASSAGE);
+  backend.hear('german');
+  const { assessment, state } = await backend.call('score-attempt', { attemptId: attemptId(1), sentenceId: sentenceIds[0], kind: 'shadow', wavBase64 });
+  assert.deepEqual(assessment.scores, { overall: 92, accuracy: 91, fluency: 99, completeness: 90, prosody: null });
+  assert.deepEqual(state.shadowAverage, { count: 1, overall: 92 });
+  const [stored] = JSON.parse(fs.readFileSync(path.join(backend.dataDirectory, 'store.json'), 'utf8')).attempts;
+  assert.deepEqual(stored.problems, [{ word: 'ist', errorType: 'Mispronunciation', accuracy: 59, weakPhonemes: [] }]);
 });
 
 test('shadowing: a recording nobody spoke into is reported and not logged', async t => {

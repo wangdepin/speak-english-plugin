@@ -9,9 +9,12 @@ import { recallScreen } from './recall-screen.js';
 import { reviewScreen } from './review-screen.js';
 import { listenOnceScreen } from './listen-once-screen.js';
 import { respondScreen } from './respond-screen.js';
+import { diagnoseScreen } from './diagnose-screen.js';
+import { gapsScreen } from './gaps-screen.js';
+import { consolidateScreen } from './consolidate-screen.js';
 import { onLanguageChange, setLanguage, t } from './i18n.js';
 
-const SCREENS = { home: homeScreen, intake: intakeScreen, passage: passageScreen, shadow: shadowScreen, reading: readingScreen, recall: recallScreen, review: reviewScreen, listen: listenOnceScreen, respond: respondScreen };
+const SCREENS = { home: homeScreen, intake: intakeScreen, passage: passageScreen, shadow: shadowScreen, reading: readingScreen, recall: recallScreen, review: reviewScreen, listen: listenOnceScreen, respond: respondScreen, diagnose: diagnoseScreen, gaps: gapsScreen, consolidate: consolidateScreen };
 
 /**
  * The daily-practice view. It shows one screen at a time; each screen gets its

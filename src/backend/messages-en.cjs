@@ -17,12 +17,12 @@ module.exports = {
   '这段话超过 {max} 字了，请分成几段录入。': 'This passage is longer than {max} characters. Enter it as several passages.',
   '场景只能是正式或口语。': 'The setting must be formal or casual.',
   '版本和场景对不上。': 'The version does not belong to this setting.',
-  '中文原文为空或太长。': 'The Chinese text is empty or too long.',
+  '原文为空或太长。': 'The passage is empty or too long.',
   '一段要有 1 到 {max} 句。': 'A passage needs 1 to {max} sentences.',
   '第 {position} 句': 'Sentence {position}',
-  '{label}的中文和英文都不能为空。': '{label}: neither the Chinese nor the English may be empty.',
+  '{label}两种语言的内容都不能为空。': '{label}: neither language may be left empty.',
   '{label}太长了，请拆成两句。': '{label} is too long. Split it into two sentences.',
-  '{label}的关键说法「{keyExpression}」不在英文句子里。': '{label}: the key expression "{keyExpression}" does not appear in the English sentence.',
+  '{label}的关键说法「{keyExpression}」不在要练的句子里。': '{label}: the key expression "{keyExpression}" does not appear in the sentence to practise.',
 
   // Records
   '找不到这一句。': 'This sentence was not found.',
@@ -86,7 +86,9 @@ module.exports = {
   'Azure 区域应为小写字母和数字，例如 swedencentral。': 'The Azure region is lower-case letters and digits, e.g. swedencentral.',
   '目标保持率应在 70% 到 99% 之间。': 'The target retention must be between 70% and 99%.',
   '每日复习上限应为 1 到 500 的整数。': 'The daily review limit must be a whole number from 1 to 500.',
-  '每秒读的字数应在 1 到 20 之间。': 'The reading speed must be between 1 and 20 characters per second.',
+  '读题速度应在 1 到 20 之间。': 'The reading speed must be between 1 and 20.',
+  '不支持这种语言。': 'This language is not supported.',
+  '母语和学习语言不能相同。': 'Your language and the language you practise must be different.',
   '思考时间应在 0 到 30 秒之间。': 'The thinking time must be between 0 and 30 seconds.',
   '说话时限应为原声时长的 1 到 5 倍。': 'The speaking limit must be 1 to 5 times the reference length.',
   '提示讲解的次数应为 1 到 20 的整数。': 'The number of misses before an explanation is suggested must be a whole number from 1 to 20.',
@@ -107,4 +109,10 @@ module.exports = {
   '{name} 出错了，请稍后再试。': '{name} had an error. Try again later.',
   '发给语音服务的内容不对。': 'What was sent to the speech service was not valid.',
   '{message}（{detail}）': '{message} ({detail})',
+
+  // Learning a passage first
+  '摸底结果的格式不对。': 'The diagnostic result is not in the right format.',
+  '还没有开始摸底。': 'The diagnostic has not been started.',
+  '课堂会话的编号无效。': "The lesson's session id is not valid.",
+  '这个版本的 LearnHarness 不能把段落交给老师，请更新应用。': 'This version of LearnHarness cannot hand a passage to the teacher. Please update the app.',
 };

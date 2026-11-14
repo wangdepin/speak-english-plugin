@@ -23,7 +23,7 @@ const freshAttempt = () => attemptId(nextAttempt++);
 function stateWithScheduled(count, settings = {}) {
   const state = { settings: { ...defaultSettings(), ...settings }, passages: {}, attempts: [], sentences: {} };
   for (let n = 1; n <= count; n += 1) {
-    state.sentences[sentenceId(n)] = { id: sentenceId(n), en: 'I will tell him about it.', schedule: null };
+    state.sentences[sentenceId(n)] = { id: sentenceId(n), target: 'I will tell him about it.', schedule: null };
     judgeRecall(state, { attemptId: freshAttempt(), sentenceId: sentenceId(n), said: true, now: at('2026-11-14T10:00:00') + n });
   }
   return state;
@@ -112,7 +112,7 @@ test('scores do not count as a review and never move the schedule', () => {
 
 test('review input is validated, and a refused review changes nothing', () => {
   const state = stateWithScheduled(1);
-  state.sentences[sentenceId(2)] = { id: sentenceId(2), en: 'Nailed it.', schedule: null };
+  state.sentences[sentenceId(2)] = { id: sentenceId(2), target: 'Nailed it.', schedule: null };
   const now = at('2026-11-15T09:00:00');
   const base = { attemptId: attemptId(1), sentenceId: sentenceId(1), said: false, timedOut: true, now };
   const refused = [
@@ -133,7 +133,7 @@ test('through the backend: a recalled sentence shows up in the review queue of t
   const handlers = new Map();
   createBackend({ dataDirectory, signal: new AbortController().signal, handle: (name, handler) => handlers.set(name, handler), inference: {} });
   const call = (name, input) => handlers.get(name)(input);
-  const { state } = await call('create-passage', { register: 'casual', version: 'brief', chinese: '我搞定了。', sentences: [{ zh: '我搞定了。', en: 'Nailed it.', keyExpression: '' }] });
+  const { state } = await call('create-passage', { register: 'casual', version: 'brief', nativeLanguage: 'zh-CN', targetLanguage: 'en-US', source: '我搞定了。', sentences: [{ native: '我搞定了。', target: 'Nailed it.', keyExpression: '' }] });
   const [sentence] = state.passages[0].sentences;
   assert.deepEqual([sentence.misses, sentence.explanation, state.review.scheduled], [0, null, 0]);
   await assert.rejects(call('judge-review', { attemptId: attemptId(1), sentenceId: sentence.id, said: true }), /请先在段落里试背/);

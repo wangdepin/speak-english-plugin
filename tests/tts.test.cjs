@@ -36,6 +36,24 @@ test('returns the MP3 bytes with their playing time', async () => {
   assert.ok(init.signal instanceof AbortSignal);
 });
 
+test('the language of the text is sent as language_code, and only when one is given', async () => {
+  const cases = [
+    ['not given', {}, undefined],
+    ['null', { languageCode: null }, undefined],
+    ['English', { languageCode: 'en' }, 'en'],
+    ['Japanese', { languageCode: 'ja', text: 'やり遂げました。' }, 'ja'],
+    ['Cantonese', { languageCode: 'yue', text: '我搞掂咗。' }, 'yue'],
+  ];
+  for (const [name, overrides, expected] of cases) {
+    const { fetchImpl, calls } = fakeFetch(audioResponse(fixtureBytes('elevenlabs', 'success.mp3')));
+    await speak({ fetchImpl, ...overrides });
+    const body = JSON.parse(calls[0].init.body);
+    assert.equal(body.language_code, expected, name);
+    assert.equal(Object.hasOwn(body, 'language_code'), expected !== undefined, name);
+    assert.deepEqual(Object.keys(body).filter(key => key !== 'language_code'), ['text', 'model_id'], name);
+  }
+});
+
 test('recorded failures map to stable codes and keep the service\'s reason', async () => {
   const cases = [
     ['bad-key', 'invalid-key', 401, /invalid_api_key: Invalid API key/],
@@ -81,6 +99,12 @@ test('unusable input is refused before any request is made', async () => {
     ['voice id with a path in it', { voiceId: '../v1/user/subscription' }, 'invalid-input'],
     ['voice id missing', { voiceId: undefined }, 'invalid-input'],
     ['model id with spaces', { modelId: 'eleven v4' }, 'invalid-input'],
+    ['language code that is a locale', { languageCode: 'ja-JP' }, 'invalid-input'],
+    ['language code in capitals', { languageCode: 'JA' }, 'invalid-input'],
+    ['language code of four letters', { languageCode: 'engl' }, 'invalid-input'],
+    ['language code with JSON in it', { languageCode: 'ja","x":"y' }, 'invalid-input'],
+    ['empty language code', { languageCode: '' }, 'invalid-input'],
+    ['language code not a string', { languageCode: 42 }, 'invalid-input'],
     ['no key', { key: undefined }, 'missing-key'],
     ['key with a line break', { key: 'abc\nxi-api-key: other' }, 'invalid-key'],
   ];

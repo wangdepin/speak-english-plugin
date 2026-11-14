@@ -4,16 +4,24 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { atomicWrite } = require('./atomic-write.cjs');
 const { defaultSettings } = require('./settings.cjs');
+const { upgradeFromVersion1 } = require('./store-upgrade.cjs');
 const { t } = require('./messages.cjs');
 
-const STORE_VERSION = 1;
+const STORE_VERSION = 2;
+const VERSION_1_BACKUP = 'store.v1.json';
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 const emptyState = () => ({ version: STORE_VERSION, revision: 0, settings: defaultSettings(), passages: {}, sentences: {}, attempts: [] });
 
-function isValidState(state) {
-  return isRecord(state) && state.version === STORE_VERSION && Number.isSafeInteger(state.revision)
-    && isRecord(state.settings) && isRecord(state.passages) && isRecord(state.sentences) && Array.isArray(state.attempts);
+const hasStoreShape = state => isRecord(state) && Number.isSafeInteger(state.revision)
+  && isRecord(state.settings) && isRecord(state.passages) && isRecord(state.sentences) && Array.isArray(state.attempts);
+
+const isValidState = state => hasStoreShape(state) && state.version === STORE_VERSION;
+
+/** Keeps the version 1 file beside the store before it is upgraded, once. The upgraded state is written on the next change. */
+function keepVersion1(file, text) {
+  const backup = path.join(path.dirname(file), VERSION_1_BACKUP);
+  if (!fs.existsSync(backup)) atomicWrite(backup, text);
 }
 
 function readState(file) {
@@ -26,6 +34,10 @@ function readState(file) {
   }
   let state;
   try { state = JSON.parse(text); } catch { state = null; }
+  if (hasStoreShape(state) && state.version === 1) {
+    keepVersion1(file, text);
+    upgradeFromVersion1(state);
+  }
   if (!isValidState(state)) throw new Error(t('练习数据文件损坏或版本不支持，没有做任何改动。'));
   // Settings added in a later release get their default without rewriting the file.
   state.settings = { ...defaultSettings(), ...state.settings };

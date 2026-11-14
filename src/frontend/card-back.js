@@ -1,5 +1,5 @@
 import { el, errorText } from './dom.js';
-import { appendEnglish } from './labels.js';
+import { appendWithKey } from './labels.js';
 import { blobToWav } from './recorder.js';
 import { renderAssessment } from './assessment-view.js';
 import { playOrStop } from './sentence-player.js';
@@ -20,14 +20,14 @@ async function compare(env, card, kind) {
     const { assessment, state } = await env.app.call('score-attempt', { attemptId: card.attemptId, sentenceId: card.sentence.id, kind, wavBase64: toBase64(wav) });
     if (env.signal.aborted) return;
     env.app.setState(state);
-    renderAssessment(slot, card.sentence.en, assessment);
+    renderAssessment(slot, card.sentence.target, assessment, card.language);
   } catch (cause) {
     slot.replaceChildren(el('p', 'se-muted', t('没有逐词比对：{reason}', { reason: errorText(cause) })));
   }
 }
 
 /**
- * The answer side of a card, shared by first recall and review: the English with
+ * The answer side of a card, shared by first recall and review: the sentence to say with
  * its key expression in bold, the reference audio, the learner's own recording
  * with a word-by-word comparison, and the way into the explanation.
  *
@@ -37,11 +37,11 @@ async function compare(env, card, kind) {
  */
 export function renderCardBack(env, body, scope, card, { kind, onExplain }) {
   const { sentence, taken } = card;
-  const english = el('p', 'se-english se-english-large');
-  appendEnglish(english, sentence.en, sentence.keyExpression);
+  const spoken = el('p', 'se-target se-target-large');
+  appendWithKey(spoken, sentence.target, sentence.keyExpression);
   const listen = el('div', 'se-actions');
   const verdict = el('div', 'se-actions se-verdict');
-  body.replaceChildren(el('p', 'se-chinese', sentence.zh), english, listen);
+  body.replaceChildren(el('p', 'se-native', sentence.native), spoken, listen);
   if (sentence.audio) {
     const playOriginal = () => env.player.play(sentence.id).catch(env.error.show);
     env.app.ui.button(listen, t('▶ 原声'), playOriginal, scope);

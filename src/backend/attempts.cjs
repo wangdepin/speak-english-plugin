@@ -4,7 +4,7 @@ const scheduler = require('./scheduler.cjs');
 const { requireSentence } = require('./records.cjs');
 const { t } = require('./messages.cjs');
 
-// "shadow" is repeating after the reference audio; "recall" is saying the sentence from its Chinese cue on the day
+// "shadow" is repeating after the reference audio; "recall" is saying the sentence from its cue in the learner's own language on the day
 // it is learned; "review" is the same thing later, under a time limit, when the schedule says it is due.
 const ATTEMPT_KINDS = Object.freeze(['shadow', 'recall', 'review']);
 const SHADOW_AVERAGE_WINDOW = 10;

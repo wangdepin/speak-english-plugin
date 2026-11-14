@@ -1,9 +1,10 @@
 'use strict';
 
-const { QUESTION_SYSTEM_PROMPT, questionUserPrompt } = require('./question-prompts.cjs');
+const { questionSystemPrompt, questionUserPrompt } = require('./question-prompts.cjs');
 const { resolveModel } = require('./translate.cjs');
 const { replyText, extractJson, cleanText, badReply } = require('./model-reply.cjs');
 const { requirePassage } = require('./records.cjs');
+const { replyKeys, joinSentences } = require('./languages.cjs');
 const { t } = require('./messages.cjs');
 
 const SUGGESTED_QUESTIONS = 3;
@@ -11,13 +12,17 @@ const MAX_QUESTIONS_PER_PASSAGE = 6;
 const QUESTION_MAX_CHARS = 200;
 const REPLY_MAX_TOKENS = 4000;
 
-const cleanQuestion = item => ({ en: cleanText(item?.en), zh: cleanText(item?.zh) });
-const isUsable = question => question.en !== '' && question.en.length <= QUESTION_MAX_CHARS && question.zh.length <= QUESTION_MAX_CHARS;
+/** A question in the language practised, with its translation into the learner's own language. */
+const cleanQuestion = (item, keys = { native: 'native', target: 'target' }) => ({ target: cleanText(item?.[keys.target]), native: cleanText(item?.[keys.native]) });
+const isUsable = question => question.target !== '' && question.target.length <= QUESTION_MAX_CHARS && question.native.length <= QUESTION_MAX_CHARS;
 
-/** Reads the model's reply into at most three { en, zh } questions. Unusable items are dropped; none left is an error. */
-function parseQuestions(replyBody) {
+/**
+ * Reads the model's reply into at most three { target, native } questions. `keys` names the reply's
+ * fields for the two languages. Unusable items are dropped; none left is an error.
+ */
+function parseQuestions(replyBody, keys) {
   const reply = extractJson(String(replyBody ?? ''));
-  const questions = (Array.isArray(reply.questions) ? reply.questions : []).map(cleanQuestion).filter(isUsable).slice(0, SUGGESTED_QUESTIONS);
+  const questions = (Array.isArray(reply.questions) ? reply.questions : []).map(item => cleanQuestion(item, keys)).filter(isUsable).slice(0, SUGGESTED_QUESTIONS);
   if (questions.length === 0) throw badReply();
   return questions;
 }
@@ -25,16 +30,17 @@ function parseQuestions(replyBody) {
 /** Asks the model which questions this passage would answer. Nothing is stored: the learner edits and confirms first. */
 async function suggestQuestions({ inference, state, passageId, signal }) {
   const passage = requirePassage(state, passageId);
-  const english = passage.sentenceIds.map(id => state.sentences[id].en).join(' ');
+  const { nativeLanguage, targetLanguage } = passage;
+  const text = joinSentences(passage.sentenceIds.map(id => state.sentences[id].target), targetLanguage);
   const model = await resolveModel(inference, state.settings);
   const message = await inference.complete({
     model,
     purpose: 'user',
-    context: { systemPrompt: QUESTION_SYSTEM_PROMPT, messages: [{ role: 'user', content: questionUserPrompt({ register: passage.register, english, chinese: passage.chinese }), timestamp: Date.now() }] },
+    context: { systemPrompt: questionSystemPrompt(nativeLanguage, targetLanguage), messages: [{ role: 'user', content: questionUserPrompt({ register: passage.register, passage: text, source: passage.source, nativeLanguage, targetLanguage }), timestamp: Date.now() }] },
     options: { maxTokens: REPLY_MAX_TOKENS },
     signal,
   });
-  return parseQuestions(replyText(message, t('生成问句')));
+  return parseQuestions(replyText(message, t('生成问句')), replyKeys(nativeLanguage, targetLanguage));
 }
 
 const questionsOf = passage => passage.questions ?? [];
@@ -50,7 +56,7 @@ function requireQuestion(state, passageId, questionId) {
 function addQuestions(state, passageId, questions, { newId }) {
   const passage = requirePassage(state, passageId);
   if (!Array.isArray(questions) || questions.length === 0) throw new Error(t('没有要保存的问句。'));
-  const cleaned = questions.map(cleanQuestion);
+  const cleaned = questions.map(question => cleanQuestion(question));
   if (!cleaned.every(isUsable)) throw new Error(t('问句不能为空，也不能超过 {max} 个字符。', { max: QUESTION_MAX_CHARS }));
   if (questionsOf(passage).length + cleaned.length > MAX_QUESTIONS_PER_PASSAGE) throw new Error(t('一段最多 {max} 个问句，请先删掉几个。', { max: MAX_QUESTIONS_PER_PASSAGE }));
   const added = cleaned.map(question => ({ id: newId(), ...question, audio: null }));

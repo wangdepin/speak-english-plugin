@@ -27,10 +27,10 @@ function extractJson(text) {
 }
 
 /** A key expression is only useful if it can be found, and bolded, in the sentence. Returns it as spelled there, or ''. */
-function keyWithin(english, key) {
+function keyWithin(sentence, key) {
   const cleaned = cleanText(key);
-  const at = cleaned === '' ? -1 : english.toLowerCase().indexOf(cleaned.toLowerCase());
-  return at < 0 ? '' : english.slice(at, at + cleaned.length);
+  const at = cleaned === '' ? -1 : sentence.toLowerCase().indexOf(cleaned.toLowerCase());
+  return at < 0 ? '' : sentence.slice(at, at + cleaned.length);
 }
 
 module.exports = { replyText, extractJson, keyWithin, cleanText, badReply };

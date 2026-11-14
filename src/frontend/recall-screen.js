@@ -1,5 +1,5 @@
 import { el, errorLine, lifetime } from './dom.js';
-import { REGISTER_LABELS } from './labels.js';
+import { cueHeading } from './labels.js';
 import { shouldSuggestExplanation } from './lookup.js';
 import { createBlobPlayer, createSentencePlayer } from './sentence-player.js';
 import { createTakeRecorder } from './take-recorder.js';
@@ -9,7 +9,7 @@ import { speakLimitMs } from './time-limits.js';
 import { t } from './i18n.js';
 
 /**
- * First recall of a new passage: see the Chinese, say the English, then judge
+ * First recall of a new passage: see the meaning in your own language, say the sentence, then judge
  * yourself against the answer. Sentences you said enter spaced review;
  * the others come back here tomorrow. There is no limit on thinking time here.
  */
@@ -135,9 +135,9 @@ export function recallScreen(app, root, signal, { passageId }) {
     const sentence = queue[position];
     progress.textContent = t('试背 · 第 {position}/{total} 句', { position: position + 1, total: queue.length });
     const prompt = el('p', 'se-status', t('按空格开始说。'));
-    card = { sentence, attemptId: crypto.randomUUID(), side: 'front', shownAt: performance.now(), responseMs: null, speakMs: null, taken: null, judged: false, prompt };
+    card = { sentence, language: passage.targetLanguage, attemptId: crypto.randomUUID(), side: 'front', shownAt: performance.now(), responseMs: null, speakMs: null, taken: null, judged: false, prompt };
     const actions = el('div', 'se-actions');
-    body.replaceChildren(el('p', 'se-muted', t('场景：{register}', { register: t(REGISTER_LABELS[passage.register]) })), el('p', 'se-cue', sentence.zh), prompt, actions);
+    body.replaceChildren(el('p', 'se-muted', cueHeading(passage)), el('p', 'se-cue', sentence.native), prompt, actions);
     app.ui.button(actions, t('想不起来，看答案'), giveUp, scope, { variant: 'ghost', key: 'answer' });
   }
 

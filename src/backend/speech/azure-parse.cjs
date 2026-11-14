@@ -24,12 +24,15 @@ function parsePhoneme(phoneme) {
   return { expected: String(phoneme.Phoneme ?? ''), accuracy, weak, soundsLike: soundsLike(phoneme, weak) };
 }
 
+/** Only en-US and zh-CN name their phonemes. A sound without a name cannot be shown to the learner, so it is left out. */
+const isNamed = phoneme => phoneme.expected !== '';
+
 function parseWord(word) {
   return {
     word: String(word.Word ?? ''),
     errorType: typeof word.ErrorType === 'string' ? word.ErrorType : 'None',
     accuracy: scoreOrNull(word.AccuracyScore),
-    phonemes: Array.isArray(word.Phonemes) ? word.Phonemes.map(parsePhoneme) : [],
+    phonemes: Array.isArray(word.Phonemes) ? word.Phonemes.map(parsePhoneme).filter(isNamed) : [],
   };
 }
 

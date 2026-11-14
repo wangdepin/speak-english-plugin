@@ -1,6 +1,7 @@
 import { el, errorLine, lifetime } from './dom.js';
 import { findSentence } from './lookup.js';
 import { t } from './i18n.js';
+import { languageName } from './languages.js';
 
 function option(title) {
   const box = el('div', 'se-option');
@@ -15,7 +16,7 @@ function option(title) {
 export function suggestExplanation(app, body, scope, sentence, { onExplain, onNext }) {
   const { misses } = findSentence(app.state, sentence.id).sentence;
   const actions = el('div', 'se-actions');
-  body.replaceChildren(el('p', 'se-chinese', sentence.zh), el('p', 'se-english se-english-large', sentence.en), el('p', '', t('这一句已经 {misses} 次没说出来了。看看讲解，找出卡在哪里？', { misses })), actions);
+  body.replaceChildren(el('p', 'se-native', sentence.native), el('p', 'se-target se-target-large', sentence.target), el('p', '', t('这一句已经 {misses} 次没说出来了。看看讲解，找出卡在哪里？', { misses })), actions);
   app.ui.button(actions, t('看讲解'), onExplain, scope, { variant: 'default', key: 'explain' });
   app.ui.button(actions, t('下一句 →'), onNext, scope, { key: 'next' });
 }
@@ -36,7 +37,7 @@ export function openExplanation(app, body, signal, sentenceId, onDone) {
   const done = replaced => { scope.abort(); onDone(replaced); };
   const found = findSentence(app.state, sentenceId);
   if (!found) { done(true); return; }
-  const { sentence } = found;
+  const { sentence, passage } = found;
 
   /** Starts a new step: its title and content, then a row for its buttons, which is returned. */
   function frame(title, ...content) {
@@ -50,7 +51,7 @@ export function openExplanation(app, body, signal, sentenceId, onDone) {
   const button = (parent, label, action, options) => app.ui.button(parent, label, action, step.signal, options);
 
   function showClassify() {
-    const actions = frame(t('先分清缺的是什么'), el('p', 'se-cue', sentence.zh), el('p', '', t('不限时间，看着中文把这句话再说一遍，然后自己判断。')));
+    const actions = frame(t('先分清缺的是什么'), el('p', 'se-cue', sentence.native), el('p', '', t('不限时间，看着{language}把这句话再说一遍，然后自己判断。', { language: languageName(passage.nativeLanguage) })));
     button(actions, t('还是说不出来'), askModel, { key: 'no' });
     button(actions, t('能说出来'), recordSpeedGap, { key: 'yes' });
     button(actions, t('返回'), () => done(false), { variant: 'ghost' });
@@ -89,12 +90,12 @@ export function openExplanation(app, body, signal, sentenceId, onDone) {
     const difficulties = el('ul', 'se-hints');
     for (const item of explanation.difficulty) difficulties.append(el('li', '', item));
     const simpler = option(t('更简单的说法'));
-    simpler.append(el('p', 'se-english', explanation.simpler.en), el('p', 'se-muted', explanation.simpler.why));
-    const content = [el('p', 'se-chinese', sentence.zh), el('p', 'se-english', sentence.en), difficulties, simpler];
+    simpler.append(el('p', 'se-target', explanation.simpler.target), el('p', 'se-muted', explanation.simpler.why));
+    const content = [el('p', 'se-native', sentence.native), el('p', 'se-target', sentence.target), difficulties, simpler];
     let split = null;
     if (explanation.split) {
       split = option(t('拆成两句'));
-      for (const part of explanation.split) split.append(el('p', 'se-chinese', part.zh), el('p', 'se-english', part.en));
+      for (const part of explanation.split) split.append(el('p', 'se-native', part.native), el('p', 'se-target', part.target));
       content.push(split);
     }
     content.push(el('p', 'se-muted', t('采用后，这张卡换成新句子：语音重新合成，回到段落里重新试背，排期从头开始。原句的练习记录会删除。')));
