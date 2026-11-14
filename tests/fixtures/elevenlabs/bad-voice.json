@@ -1,0 +1,18 @@
+{
+ "request": {
+  "voiceId": "AAAAAAAAAAAAAAAAAAAA",
+  "modelId": "eleven_flash_v2_5",
+  "text": "I'll tell him about it."
+ },
+ "status": 404,
+ "contentType": "application/json",
+ "body": {
+  "detail": {
+   "type": "not_found",
+   "code": "voice_not_found",
+   "message": "A voice with voice_id 'AAAAAAAAAAAAAAAAAAAA' was not found.",
+   "status": "voice_not_found",
+   "request_id": "24ba85d59450f9c17bdcbcd8404e6713"
+  }
+ }
+}

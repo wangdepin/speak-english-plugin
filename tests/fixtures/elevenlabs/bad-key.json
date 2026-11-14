@@ -1,0 +1,18 @@
+{
+ "request": {
+  "voiceId": "cgSgspJ2msm6clMCkdW9",
+  "modelId": "eleven_flash_v2_5",
+  "text": "I'll tell him about it."
+ },
+ "status": 401,
+ "contentType": "application/json",
+ "body": {
+  "detail": {
+   "type": "authentication_error",
+   "code": "unauthorized",
+   "message": "Invalid API key",
+   "status": "invalid_api_key",
+   "request_id": "0410b4f3691269c753ee93ae96367296"
+  }
+ }
+}

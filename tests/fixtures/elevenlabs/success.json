@@ -1,0 +1,11 @@
+{
+ "request": {
+  "voiceId": "cgSgspJ2msm6clMCkdW9",
+  "modelId": "eleven_v4",
+  "text": "I'll tell him about it."
+ },
+ "status": 200,
+ "contentType": "audio/mpeg",
+ "audioFile": "success.mp3",
+ "audioBytes": 21358
+}

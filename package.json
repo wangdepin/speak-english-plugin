@@ -1,0 +1,17 @@
+{
+  "name": "speak-english-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LearnHarness plugin: turn your own Chinese sentences into English and drill them aloud.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "check": "for f in src/backend/*.cjs src/backend/speech/*.cjs src/frontend/*.js tests/*.cjs scripts/*.mjs; do node --check \"$f\" || exit 1; done",
+    "install:local": "npm run build && node scripts/install.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "license": "AGPL-3.0-only"
+}

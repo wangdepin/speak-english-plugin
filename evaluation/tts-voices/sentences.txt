@@ -1,0 +1,4 @@
+s1|I'll tell him about it.
+s2|What have you been up to?
+s3|I can't believe I pulled it off.
+s4|That's a fair point, but I'm not sure it holds up here.

@@ -1,0 +1,15 @@
+{
+ "request": {
+  "voiceId": "cgSgspJ2msm6clMCkdW9",
+  "modelId": "eleven_no_such_model",
+  "text": "I'll tell him about it."
+ },
+ "status": 400,
+ "contentType": "application/json",
+ "body": {
+  "detail": {
+   "status": "model_not_found",
+   "message": "A model with model ID eleven_no_such_model does not exist ..."
+  }
+ }
+}

@@ -1,0 +1,453 @@
+{
+ "Id": "629a5e8f56834fed8f4e99cd98a41d4c",
+ "RecognitionStatus": "Success",
+ "Offset": 900000,
+ "Duration": 12100000,
+ "Channel": 0,
+ "DisplayText": "I'll tell him about it.",
+ "SNR": 46.93659,
+ "NBest": [
+  {
+   "Confidence": 0.9639906,
+   "Lexical": "i'll tell him about it",
+   "ITN": "i'll tell him about it",
+   "MaskedITN": "i'll tell him about it",
+   "Display": "I'll tell him about it.",
+   "PronunciationAssessment": {
+    "AccuracyScore": 98.0,
+    "FluencyScore": 100.0,
+    "CompletenessScore": 100.0,
+    "PronScore": 98.8
+   },
+   "Words": [
+    {
+     "Word": "i'll",
+     "Offset": 900000,
+     "Duration": 2100000,
+     "PronunciationAssessment": {
+      "AccuracyScore": 94.0,
+      "ErrorType": "None"
+     },
+     "Syllables": [
+      {
+       "Syllable": "a\u026al",
+       "Grapheme": "i'll",
+       "PronunciationAssessment": {
+        "AccuracyScore": 85.0
+       },
+       "Offset": 900000,
+       "Duration": 2100000
+      }
+     ],
+     "Phonemes": [
+      {
+       "Phoneme": "a\u026a",
+       "PronunciationAssessment": {
+        "AccuracyScore": 78.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "a\u026a",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "l",
+          "Score": 39.0
+         },
+         {
+          "Phoneme": "\u028c",
+          "Score": 16.0
+         }
+        ]
+       },
+       "Offset": 900000,
+       "Duration": 1400000
+      },
+      {
+       "Phoneme": "l",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "l",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "a\u026a",
+          "Score": 33.0
+         },
+         {
+          "Phoneme": "t",
+          "Score": 4.0
+         }
+        ]
+       },
+       "Offset": 2400000,
+       "Duration": 600000
+      }
+     ]
+    },
+    {
+     "Word": "tell",
+     "Offset": 3100000,
+     "Duration": 2100000,
+     "PronunciationAssessment": {
+      "AccuracyScore": 100.0,
+      "ErrorType": "None"
+     },
+     "Syllables": [
+      {
+       "Syllable": "t\u025bl",
+       "Grapheme": "tell",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0
+       },
+       "Offset": 3100000,
+       "Duration": 2100000
+      }
+     ],
+     "Phonemes": [
+      {
+       "Phoneme": "t",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "t",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "d",
+          "Score": 1.0
+         },
+         {
+          "Phoneme": "l",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 3100000,
+       "Duration": 500000
+      },
+      {
+       "Phoneme": "\u025b",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "\u025b",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "t",
+          "Score": 33.0
+         },
+         {
+          "Phoneme": "l",
+          "Score": 1.0
+         }
+        ]
+       },
+       "Offset": 3700000,
+       "Duration": 900000
+      },
+      {
+       "Phoneme": "l",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "l",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "h",
+          "Score": 9.0
+         },
+         {
+          "Phoneme": "\u0259",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 4700000,
+       "Duration": 500000
+      }
+     ]
+    },
+    {
+     "Word": "him",
+     "Offset": 5300000,
+     "Duration": 1300000,
+     "PronunciationAssessment": {
+      "AccuracyScore": 100.0,
+      "ErrorType": "None"
+     },
+     "Syllables": [
+      {
+       "Syllable": "h\u026am",
+       "Grapheme": "him",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0
+       },
+       "Offset": 5300000,
+       "Duration": 1300000
+      }
+     ],
+     "Phonemes": [
+      {
+       "Phoneme": "h",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "h",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "l",
+          "Score": 1.0
+         },
+         {
+          "Phoneme": "\u026a",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 5300000,
+       "Duration": 500000
+      },
+      {
+       "Phoneme": "\u026a",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "\u026a",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "m",
+          "Score": 17.0
+         },
+         {
+          "Phoneme": "\u025b",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 5900000,
+       "Duration": 300000
+      },
+      {
+       "Phoneme": "m",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "m",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "\u0259",
+          "Score": 0.0
+         },
+         {
+          "Phoneme": "\u026a",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 6300000,
+       "Duration": 300000
+      }
+     ]
+    },
+    {
+     "Word": "about",
+     "Offset": 6700000,
+     "Duration": 2800000,
+     "PronunciationAssessment": {
+      "AccuracyScore": 97.0,
+      "ErrorType": "None"
+     },
+     "Syllables": [
+      {
+       "Syllable": "\u0259",
+       "Grapheme": "a",
+       "PronunciationAssessment": {
+        "AccuracyScore": 97.0
+       },
+       "Offset": 6700000,
+       "Duration": 700000
+      },
+      {
+       "Syllable": "ba\u028at",
+       "Grapheme": "bout",
+       "PronunciationAssessment": {
+        "AccuracyScore": 97.0
+       },
+       "Offset": 7500000,
+       "Duration": 2000000
+      }
+     ],
+     "Phonemes": [
+      {
+       "Phoneme": "\u0259",
+       "PronunciationAssessment": {
+        "AccuracyScore": 97.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "\u0259",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "b",
+          "Score": 1.0
+         },
+         {
+          "Phoneme": "m",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 6700000,
+       "Duration": 700000
+      },
+      {
+       "Phoneme": "b",
+       "PronunciationAssessment": {
+        "AccuracyScore": 97.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "b",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "a\u028a",
+          "Score": 0.0
+         },
+         {
+          "Phoneme": "\u0259",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 7500000,
+       "Duration": 500000
+      },
+      {
+       "Phoneme": "a\u028a",
+       "PronunciationAssessment": {
+        "AccuracyScore": 97.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "a\u028a",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "b",
+          "Score": 0.0
+         },
+         {
+          "Phoneme": "\u00e6",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 8100000,
+       "Duration": 700000
+      },
+      {
+       "Phoneme": "t",
+       "PronunciationAssessment": {
+        "AccuracyScore": 97.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "t",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "a\u028a",
+          "Score": 22.0
+         },
+         {
+          "Phoneme": "\u026a",
+          "Score": 19.0
+         }
+        ]
+       },
+       "Offset": 8900000,
+       "Duration": 600000
+      }
+     ]
+    },
+    {
+     "Word": "it",
+     "Offset": 9600000,
+     "Duration": 3400000,
+     "PronunciationAssessment": {
+      "AccuracyScore": 100.0,
+      "ErrorType": "None"
+     },
+     "Syllables": [
+      {
+       "Syllable": "\u026at",
+       "Grapheme": "it",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0
+       },
+       "Offset": 9600000,
+       "Duration": 3400000
+      }
+     ],
+     "Phonemes": [
+      {
+       "Phoneme": "\u026a",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "\u026a",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "t",
+          "Score": 70.0
+         },
+         {
+          "Phoneme": "h",
+          "Score": 0.0
+         }
+        ]
+       },
+       "Offset": 9600000,
+       "Duration": 1000000
+      },
+      {
+       "Phoneme": "t",
+       "PronunciationAssessment": {
+        "AccuracyScore": 100.0,
+        "NBestPhonemes": [
+         {
+          "Phoneme": "t",
+          "Score": 100.0
+         },
+         {
+          "Phoneme": "d",
+          "Score": 3.0
+         },
+         {
+          "Phoneme": "\u03b8",
+          "Score": 1.0
+         }
+        ]
+       },
+       "Offset": 10700000,
+       "Duration": 2300000
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
