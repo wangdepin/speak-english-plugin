@@ -33,6 +33,19 @@
 
 ## 安装
 
+### 下载发布包（不需要构建工具）
+
+需要：LearnHarness 0.7.0 或更高版本。
+
+1. 从[最新发布](https://github.com/wangdepin/speak-english-plugin/releases/latest)下载 `speak-english-<版本>.zip`。
+2. 在 LearnHarness 里打开 **Settings → Community plugins**，找到插件目录。
+3. 把压缩包解压到这个目录。压缩包里是 `speak-english/dist/`，解压后应该有 `<插件目录>/speak-english/dist/manifest.json`。
+4. 刷新 Community plugins，启用「英语开口练习」，再到插件设置里填两把密钥和 Azure 区域。同一页的「测试麦克风和评分」可以一次检查麦克风、密钥和区域。
+
+更新时删掉 `speak-english/dist/`，把新的发布包解压到原处。不要删 `speak-english/data/`：里面是你的段落、练习记录、密钥和音频。然后重启 LearnHarness。
+
+### 从源码构建
+
 需要：LearnHarness 0.7.0 或更高版本，较新的 Node.js 和 npm。
 
 ```sh
@@ -51,13 +64,16 @@ speak-english/
     main.js           # 浏览器端 ES 模块
     backend.cjs       # Node CommonJS
     styles.css
+    LICENSE
     FSRS-LICENSE.txt
   data/               # 你的段落、密钥和音频，不随插件分发
 ```
 
-在 **Settings → Community plugins** 里启用「英语开口练习」，再到插件设置里填两把密钥和 Azure 区域。同一页的「测试麦克风和评分」可以一次检查麦克风、密钥和区域。
+然后按上面第 4 步启用插件并填密钥。
 
 更新时再跑一次 `npm run install:local`，然后重启 LearnHarness。安装只替换 `dist/`，不碰旁边的 `data/`。
+
+`npm run package` 会在 `release/` 里生成发布包和它的 SHA-256 校验和。
 
 ## 流程
 
@@ -120,7 +136,7 @@ speak-english/
 | `src/frontend/*-screen.js` | 练习视图的每个页面各一个文件，以及设置页 |
 | `src/frontend/shortcuts.js`、`shortcut-keys.js` | 快捷键和按键提示 |
 | `src/frontend/i18n.js`、`en.js`、`src/backend/messages*.cjs` | 两种语言的界面文字 |
-| `scripts/` | 构建、安装、录制样例、联网检查、界面走查 |
+| `scripts/` | 构建、安装、打发布包、录制样例、联网检查、界面走查 |
 | `tests/` | Node 自带的测试，用录好的服务返回，不联网 |
 | `docs/` | 设计、阶段 0 的验证结果 |
 | `evaluation/`、`spikes/` | 前期的语音测评和阶段 0 的验证代码，不属于插件本身 |
@@ -154,7 +170,6 @@ node scripts/ui-walkthrough-keys.mjs      <仓库> <应用地址> <假麦克风 
 
 - 完整跟读的整段评分（现在只录音存档）。
 - 把讲解交给 LearnHarness 课堂里的 teacher。
-- 可下载的发布包；目前要从源码构建。
 
 ## 许可证
 

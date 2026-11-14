@@ -66,6 +66,27 @@ recalling and reviewing are scored and then discarded.
 
 ## Installation
 
+### Download a release (no build tools needed)
+
+Requirements: LearnHarness 0.7.0 or later.
+
+1. Download `speak-english-<version>.zip` from the
+   [latest release](https://github.com/wangdepin/speak-english-plugin/releases/latest).
+2. Open **Settings → Community plugins** in LearnHarness to find your plugins
+   directory.
+3. Unzip the archive into that directory. It contains `speak-english/dist/`, so
+   you end up with `<plugins-directory>/speak-english/dist/manifest.json`.
+4. Refresh Community plugins and enable **英语开口练习**, then open the plugin's
+   settings and enter the two keys and the Azure region. The
+   **Test the microphone and scoring** button on the same page checks the
+   microphone, the key and the region in one go.
+
+To update, delete `speak-english/dist/` and unzip the new release in its place.
+Never delete `speak-english/data/`: it holds your passages, practice log, keys
+and audio. Restart LearnHarness to load the new version.
+
+### Build from source
+
 Requirements: LearnHarness 0.7.0 or later, a recent Node.js and npm.
 
 ```sh
@@ -86,17 +107,18 @@ speak-english/
     main.js           # browser ES module
     backend.cjs       # Node CommonJS
     styles.css
+    LICENSE
     FSRS-LICENSE.txt
   data/               # your passages, keys and audio; never distributed
 ```
 
-Open **Settings → Community plugins**, enable **英语开口练习**, then open the
-plugin's settings and enter the two keys and the Azure region. The
-**Test the microphone and scoring** button on the same page checks the
-microphone, the key and the region in one go.
+Then enable the plugin and enter the keys as in step 4 above.
 
 To update, run `npm run install:local` again and restart LearnHarness. The
 installer replaces only `dist/` and never touches the sibling `data/` directory.
+
+`npm run package` builds the release archive and its SHA-256 checksum into
+`release/`.
 
 ## Workflow
 
@@ -178,7 +200,7 @@ are ignored while you type in a field or a dialog is open.
 | `src/frontend/*-screen.js` | One file per screen of the practice view, and the settings page |
 | `src/frontend/shortcuts.js`, `shortcut-keys.js` | Keyboard shortcuts and the hint line |
 | `src/frontend/i18n.js`, `en.js`, `src/backend/messages*.cjs` | Interface text in two languages |
-| `scripts/` | Build, install, fixture capture, live checks, UI walkthroughs |
+| `scripts/` | Build, install, release packaging, fixture capture, live checks, UI walkthroughs |
 | `tests/` | Node test runner with recorded service replies; no network |
 | `docs/` | Design, phase 0 results (Chinese) |
 | `evaluation/`, `spikes/` | Early voice comparison and phase 0 code; not part of the plugin |
@@ -219,7 +241,6 @@ node scripts/ui-walkthrough-keys.mjs      <repo> <base url> <fake-mic.wav> <dir>
 
 - Scoring of the whole-passage read-along (it is only archived).
 - Handing explanations to the teacher of a LearnHarness session.
-- A downloadable release; for now the plugin is built from source.
 
 ## License
 

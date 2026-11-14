@@ -8,7 +8,8 @@
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.cjs",
     "check": "for f in src/backend/*.cjs src/backend/speech/*.cjs src/frontend/*.js tests/*.cjs scripts/*.mjs; do node --check \"$f\" || exit 1; done",
-    "install:local": "npm run build && node scripts/install.mjs"
+    "install:local": "npm run build && node scripts/install.mjs",
+    "package": "node scripts/package.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2"
