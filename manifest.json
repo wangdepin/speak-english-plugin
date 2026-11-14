@@ -2,7 +2,7 @@
   "apiVersion": 1,
   "id": "speak-english",
   "name": "英语开口练习",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "0.7.0",
   "description": "把自己想说的中文变成英语，每天跟读、试背、按遗忘进度复习。翻译用你配置的模型，合成用 ElevenLabs，评分用 Azure 语音，三者都可能产生费用。",
   "main": "main.js",
